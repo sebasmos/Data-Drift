@@ -11,7 +11,7 @@ WITH pivoted AS(
         MAX(respiration) as max_respiration,
         MIN(respiration) as min_respiration,
         AVG(respiration) as mean_respiration
-    FROM `lcp-consortium.eicu_crd_ii_v0_1_0.vitalperiodic`
+    FROM `physionet-data.eicu_crd.vitalperiodic`
     GROUP BY patientunitstayid
 )
 

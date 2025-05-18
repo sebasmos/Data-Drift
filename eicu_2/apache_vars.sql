@@ -2,18 +2,9 @@ CREATE temp TABLE apache_vars AS
 WITH pivoted AS(
     SELECT
         patientunitstayid,
-        CASE
-            WHEN MAX(intubated) = TRUE THEN 1
-            ELSE 0
-        END AS intubated,
-        CASE
-            WHEN MAX(vent) = TRUE THEN 1
-            ELSE 0
-        END AS vent,
-        CASE
-            WHEN MAX(dialysis) = TRUE THEN 1
-            ELSE 0
-        END AS dialysis,
+        CAST(MAX(intubated) AS INT64) AS intubated,
+        CAST(MAX(vent) AS INT64) AS vent,
+        CAST(MAX(dialysis) AS INT64) AS dialysis,
         max(eyes) as eyes,
         max(motor) as motor,
         max(verbal) as verbal,
