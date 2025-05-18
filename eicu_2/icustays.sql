@@ -9,6 +9,9 @@ WITH pt AS
             else cast(age as INT64)
           END as age_num
         , CASE
+            WHEN REGEXP_CONTAINS(pt.gender, r'(?i)(male)') THEN 1 ELSE 0
+          END AS male
+        , CASE
             WHEN REGEXP_CONTAINS(pt.gender, r'(?i)(female)') THEN 1 ELSE 0
           END AS female
         , CASE
@@ -26,6 +29,7 @@ WITH pt AS
 
 select
       pt.*
+
 FROM pt
 -- WHERE HOSP_NUM = 1
 ;
