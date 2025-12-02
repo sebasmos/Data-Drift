@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Subgroup-Specific Drift in Clinical Prediction Models"
+authors:
+  - family-names: "Hamza"
+    given-names: ""
+  - family-names: "Xiaoli"
+    given-names: ""
+  - family-names: "Celi"
+    given-names: "Leo Anthony"
+  - family-names: "Cajas Ordóñez"
+    given-names: "Sebastián Andrés"
+    alias: sebasmos
+repository-code: "https://github.com/HamzaNabulsi/Data-Drift"
+url: "https://github.com/HamzaNabulsi/Data-Drift"
+abstract: >-
+  Code for analyzing differential performance drift across patient
+  demographic and clinical subgroups in ICU prediction models.
+  Tests whether model drift affects all patient subgroups equally—a
+  critical question for healthcare AI fairness.
+keywords:
+  - model drift
+  - healthcare AI
+  - fairness
+  - SOFA score
+  - ICU prediction
+  - subgroup analysis
+  - clinical decision support
+license: CC-BY-NC-SA-4.0
+version: 1.0.0
+date-released: 2025-12-02
