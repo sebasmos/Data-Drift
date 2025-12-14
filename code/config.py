@@ -138,7 +138,7 @@ DATASETS = {
 # ============================================================
 # ACTIVE DATASET - CHANGE THIS TO SWITCH DATASETS
 # ============================================================
-ACTIVE_DATASET = 'amsterdam_icu'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'amsterdam_icu', etc.
+ACTIVE_DATASET = 'mimic_mouthcare'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'amsterdam_icu', etc.
 
 # ============================================================
 # OUTPUT CONFIGURATION
