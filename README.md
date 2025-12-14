@@ -48,6 +48,7 @@ python mimic/02_drift_analysis.py
 | Dataset | Period | N Patients | Mortality | SOFA Trend | AUC Change | Direction | Key Finding |
 |---------|--------|-----------|-----------|------------|-----------|-----------|-------------|
 | **MIMIC (Mech. Vent.)** | 2008-2019 | ~15-20k | 20-30% | Declining | - | ⬇️ Worsening | High-acuity ventilated patients |
+| **MIMIC (Mouthcare)** | 2008-2019 | 8,675 | 27% → 34% | Slight improvement | **+0.022** (+4%) | → Stable | Care frequency matters (low care: +0.146 AUC) |
 | **Amsterdam ICU** | 2013-2021 | 27,259 | 7.9% | Improving | **+0.034** (+5%) | ⬆️ Improving | General ICU population |
 
 ### Amsterdam ICU Detailed Results (2013-2021)
@@ -69,6 +70,29 @@ python mimic/02_drift_analysis.py
 - 👥 **Gender disparity:** Females consistently outperform males
 - 🦠 **COVID-19 impact:** -0.036 AUC drop in 2020-2021 vs 2017-2019 peak
 
+### MIMIC Mouthcare Results (2008-2019)
+
+| Period | N | Mortality | AUC | Change from 2008-2010 |
+|--------|---|-----------|-----|-----------------------|
+| 2008-2010 | 3,418 | 26.7% | 0.608 | Baseline |
+| 2011-2013 | 2,140 | 27.4% | 0.601 | -0.007 |
+| 2014-2016 | 1,946 | 28.7% | 0.619 | +0.011 |
+| 2017-2019 | 1,171 | 34.2% | 0.630 | **+0.022** |
+
+**Key Subgroup Findings:**
+
+| Subgroup | 2008-2010 AUC | 2017-2019 AUC | Change | Trend |
+|----------|---------------|---------------|--------|-------|
+| **Care: Low frequency (Q4)** | 0.611 | 0.757 | **+0.146** | 🔥 Largest improvement |
+| **Care: High frequency (Q1)** | 0.619 | 0.628 | +0.009 | → Stable |
+| **Female** | 0.607 | 0.661 | +0.054 | ⬆️ Improving |
+| **Male** | 0.610 | 0.610 | 0.000 | → Unchanged |
+| **<50 years** | 0.675 | 0.721 | +0.047 | ⬆️ Improving |
+| **Black patients** | 0.657 | 0.551 | -0.106 | ⬇️ Declining |
+| **Other race** | 0.567 | 0.672 | +0.104 | ⬆️ Improving |
+
+**Critical Finding:** Patients receiving **less frequent mouthcare** show the largest SOFA performance improvement (+0.146), suggesting changing case-mix or care protocols.
+
 ---
 
 ## 📂 Datasets
@@ -76,8 +100,8 @@ python mimic/02_drift_analysis.py
 | Dataset | Status | N | Period | Mortality | SOFA | Documentation |
 |---------|--------|---|--------|-----------|------|---------------|
 | **MIMIC (Mech. Vent.)** | ✅ Complete | ~15-20k | 2008-2019 | 20-30% | ✅ Pre-computed | [data/mimic/](data/mimic/) |
+| **MIMIC (Mouthcare)** | ✅ Complete | 8,675 | 2008-2019 | 27-34% | ✅ Pre-computed | [data/mimic/](data/mimic/) |
 | **Amsterdam ICU** | ✅ Complete | 27,259 | 2013-2021 | 7.9% | ✅ Pre-computed | [data/amsterdam/](data/amsterdam/) |
-| **MIMIC (Mouthcare)** | ✅ Ready | - | 2008-2019 | - | ✅ Pre-computed | [data/mimic/](data/mimic/) |
 | **eICU v1 (Sepsis)** | ⚠️ Needs SOFA | - | - | - | ❌ Needs computation | [data/eicu/TODO.md](data/eicu/TODO.md) |
 | **eICU v2 (Sepsis)** | ⚠️ Needs SOFA | - | - | - | ❌ Needs computation | [data/eicu/TODO.md](data/eicu/TODO.md) |
 | **Chinese ICU** | 🔜 Pending | - | - | - | ❌ TBD | [data/chinese/TODO.md](data/chinese/TODO.md) |
@@ -108,7 +132,8 @@ Data-Drift/
 │   └── chinese/                    # 🔜 Chinese data + TODO
 │
 ├── output/                         # Generated results
-│   ├── mimic/                      # MIMIC outputs
+│   ├── mimic/                      # MIMIC mech. vent. outputs
+│   ├── mimic_mouthcare/            # ✅ MIMIC mouthcare outputs
 │   └── amsterdam_icu/              # ✅ Amsterdam outputs
 │       ├── amsterdam_icu_drift_analysis.png
 │       ├── amsterdam_icu_yearly_performance.csv
@@ -377,18 +402,18 @@ python mimic/02_drift_analysis.py
 
 ### Completed
 - ✅ **MIMIC (Mechanical Ventilation)** - Full analysis complete
+- ✅ **MIMIC (Mouthcare)** - Full analysis complete (8,675 patients, 2008-2019)
+  - Key finding: Care frequency drift (+0.146 AUC for low-frequency care)
+  - Racial disparities identified (Black patients: -0.106 AUC)
 - ✅ **Amsterdam ICU** - Full analysis complete (27,259 patients, 2013-2021)
-  - Exploratory analysis done
-  - Drift analysis done
-  - Comprehensive documentation created
   - Key finding: Improving SOFA performance (+0.034 AUC)
+  - Age-specific heterogeneity (<50 years: +24% improvement)
 
 ### In Progress
 - ⚠️ **eICU v1 & v2** - Needs SOFA score computation (Emma)
 
 ### Pending
 - 🔜 **Chinese ICU** - Awaiting data (Ziyue)
-- 🔜 **MIMIC Mouthcare** - Ready to run analysis
 
 ### Future Work
 - Multi-score validation (SAPS II, OASIS, APACHE III for Amsterdam)
