@@ -20,18 +20,15 @@ uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 
-# Run full pipeline
-./run_all.sh
+# Run full pipeline (see Bootstrap Configuration below)
+./run_all.sh --fast       # Fast testing (~1 min)
+./run_all.sh              # Default (~15 min)
+./run_all.sh -b 1000      # Production (~2-4 hours)
 
 # Or run individual steps
 ./run_all.sh --setup      # Only setup environment
 ./run_all.sh --analysis   # Only run analysis
 ./run_all.sh --figures    # Only generate figures
-
-# Or run Python scripts directly
-python code/batch_analysis.py
-python code/supplementary_analysis.py
-python code/generate_all_figures.py
 ```
 
 ### Windows (PowerShell)
@@ -41,13 +38,36 @@ uv venv
 .venv\Scripts\activate
 uv pip install -r requirements.txt
 
-# Run full analysis
-python code/batch_analysis.py
-python code/supplementary_analysis.py
+# Run analysis (see Bootstrap Configuration below)
+python code/batch_analysis.py --fast        # Fast testing (~1 min)
+python code/batch_analysis.py               # Default (~15 min)
+python code/batch_analysis.py -b 1000       # Production (~2-4 hours)
+
+python code/supplementary_analysis.py --fast
 python code/generate_all_figures.py
 
 # Or use Git Bash to run the shell script
-bash run_all.sh
+bash run_all.sh --fast
+```
+
+### Bootstrap Configuration
+
+The analysis computes bootstrap confidence intervals for AUC values. The number of bootstrap iterations (`N_BOOTSTRAP`) controls:
+- **Accuracy**: More iterations = more accurate confidence intervals
+- **Runtime**: More iterations = longer runtime
+
+| Mode | Iterations | Runtime (all datasets) | Use Case |
+|------|------------|------------------------|----------|
+| `--fast` | 2 | ~1 minute | Testing, debugging |
+| Default | 100 | ~15 minutes | Development |
+| `-b 1000` | 1000 | ~2-4 hours | Production, publication |
+
+```bash
+# Examples
+python code/batch_analysis.py --fast           # 2 iterations
+python code/batch_analysis.py                  # 100 iterations (default)
+python code/batch_analysis.py --bootstrap 500  # 500 iterations
+python code/batch_analysis.py -b 1000          # 1000 iterations
 ```
 
 ---

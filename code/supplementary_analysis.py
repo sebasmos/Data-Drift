@@ -8,6 +8,11 @@ These cohorts have:
 - Care frequency data (mouthcare/turning intervals)
 - Race/ethnicity data
 
+Usage:
+    python supplementary_analysis.py                    # Default (N_BOOTSTRAP=100)
+    python supplementary_analysis.py --fast             # Fast testing (N_BOOTSTRAP=2)
+    python supplementary_analysis.py --bootstrap 1000   # Production (N_BOOTSTRAP=1000)
+
 Output:
 - output/mimic_sofa_results.csv - Full results by subgroup
 - output/mimic_sofa_deltas.csv - Drift deltas
@@ -23,13 +28,26 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import argparse
 from pathlib import Path
 from sklearn.metrics import roc_auc_score
 import warnings
 warnings.filterwarnings('ignore')
 
-# Bootstrap settings for confidence intervals
-N_BOOTSTRAP = 1000
+# =============================================================================
+# BOOTSTRAP CONFIGURATION (see batch_analysis.py for details)
+# =============================================================================
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='MIMIC-IV SOFA + Care Frequency Analysis')
+    parser.add_argument('-b', '--bootstrap', type=int, default=100,
+                       help='Number of bootstrap iterations for CI (default: 100)')
+    parser.add_argument('--fast', action='store_true',
+                       help='Fast mode: use only 2 bootstrap iterations')
+    return parser.parse_args()
+
+args = parse_args()
+N_BOOTSTRAP = 2 if args.fast else args.bootstrap
 CI_LEVEL = 0.95
 RANDOM_SEED = 42
 
@@ -363,6 +381,7 @@ def generate_supplementary_figure(results_df, deltas_df, dataset_name, output_na
                 plot_data['delta_ci_upper'].values - plot_data['delta'].values
             ])
             xerr = np.nan_to_num(xerr, nan=0)
+            xerr = np.clip(xerr, 0, None)  # Error bars must be non-negative
             bars = ax4.barh(range(len(plot_data)), plot_data['delta'], color=colors,
                            xerr=xerr, capsize=3, error_kw={'elinewidth': 1})
         else:

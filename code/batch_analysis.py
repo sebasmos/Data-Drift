@@ -1,6 +1,12 @@
 """
 Batch Drift Analysis Runner
 Analyzes all configured datasets for subgroup-specific drift in ICU severity scores.
+
+Usage:
+    python batch_analysis.py                    # Default (N_BOOTSTRAP=100)
+    python batch_analysis.py --fast             # Fast testing (N_BOOTSTRAP=2)
+    python batch_analysis.py --bootstrap 1000   # Production (N_BOOTSTRAP=1000)
+    python batch_analysis.py -b 50              # Custom bootstrap iterations
 """
 
 import sys
@@ -10,7 +16,7 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 import pandas as pd
 import numpy as np
 import os
-import sys
+import argparse
 from pathlib import Path
 
 # Add parent directory to path
@@ -21,8 +27,47 @@ from sklearn.metrics import roc_auc_score
 import warnings
 warnings.filterwarnings('ignore')
 
-# Bootstrap settings for confidence intervals
-N_BOOTSTRAP = 1000
+# =============================================================================
+# BOOTSTRAP CONFIGURATION
+# =============================================================================
+# N_BOOTSTRAP controls the number of bootstrap iterations for confidence intervals.
+# Higher values = more accurate CIs but slower runtime.
+#
+# Recommended values:
+#   - Fast testing:  2-10     (~1 min for all datasets)
+#   - Development:   50-100   (~10-20 min)
+#   - Production:    1000     (~2-4 hours)
+# =============================================================================
+
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Run drift analysis with configurable bootstrap iterations.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python batch_analysis.py                    # Default (100 bootstrap iterations)
+    python batch_analysis.py --fast             # Fast testing (2 iterations)
+    python batch_analysis.py --bootstrap 1000   # Production run (1000 iterations)
+    python batch_analysis.py -b 50              # Custom: 50 iterations
+        """
+    )
+    parser.add_argument(
+        '-b', '--bootstrap',
+        type=int,
+        default=100,
+        help='Number of bootstrap iterations for CI (default: 100)'
+    )
+    parser.add_argument(
+        '--fast',
+        action='store_true',
+        help='Fast mode: use only 2 bootstrap iterations (for testing)'
+    )
+    return parser.parse_args()
+
+# Parse arguments
+args = parse_args()
+N_BOOTSTRAP = 2 if args.fast else args.bootstrap
 CI_LEVEL = 0.95
 RANDOM_SEED = 42
 

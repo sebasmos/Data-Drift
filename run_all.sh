@@ -6,10 +6,17 @@
 # for the multi-dataset ICU severity score drift study.
 #
 # Usage:
-#   ./run_all.sh              # Run everything
-#   ./run_all.sh --setup      # Only setup environment
-#   ./run_all.sh --analysis   # Only run analysis
-#   ./run_all.sh --figures    # Only generate figures
+#   ./run_all.sh                  # Run everything (default: 100 bootstrap iterations)
+#   ./run_all.sh --fast           # Fast mode (~1 min, 2 bootstrap iterations)
+#   ./run_all.sh --bootstrap 1000 # Production mode (~2-4 hours, 1000 iterations)
+#   ./run_all.sh --setup          # Only setup environment
+#   ./run_all.sh --analysis       # Only run analysis
+#   ./run_all.sh --figures        # Only generate figures
+#
+# Bootstrap iterations control confidence interval accuracy:
+#   --fast           :   2 iterations (~1 min)   - for testing
+#   default          : 100 iterations (~15 min)  - for development
+#   --bootstrap 1000 : 1000 iterations (~2-4 hr) - for production/publication
 #
 # Requirements:
 #   - Python 3.9+
@@ -69,20 +76,46 @@ RUN_SETUP=true
 RUN_ANALYSIS=true
 RUN_FIGURES=true
 TOTAL_STEPS=6
+BOOTSTRAP_ARGS=""
 
-if [ "$1" == "--setup" ]; then
-    RUN_ANALYSIS=false
-    RUN_FIGURES=false
-    TOTAL_STEPS=3
-elif [ "$1" == "--analysis" ]; then
-    RUN_SETUP=false
-    RUN_FIGURES=false
-    TOTAL_STEPS=1
-elif [ "$1" == "--figures" ]; then
-    RUN_SETUP=false
-    RUN_ANALYSIS=false
-    TOTAL_STEPS=1
-fi
+# Parse all arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --setup)
+            RUN_ANALYSIS=false
+            RUN_FIGURES=false
+            TOTAL_STEPS=3
+            shift
+            ;;
+        --analysis)
+            RUN_SETUP=false
+            RUN_FIGURES=false
+            TOTAL_STEPS=1
+            shift
+            ;;
+        --figures)
+            RUN_SETUP=false
+            RUN_ANALYSIS=false
+            TOTAL_STEPS=1
+            shift
+            ;;
+        --fast)
+            BOOTSTRAP_ARGS="--fast"
+            echo -e "${YELLOW}FAST MODE: Using 2 bootstrap iterations (for testing)${NC}"
+            shift
+            ;;
+        --bootstrap|-b)
+            BOOTSTRAP_ARGS="--bootstrap $2"
+            echo -e "${YELLOW}BOOTSTRAP: Using $2 iterations${NC}"
+            shift 2
+            ;;
+        *)
+            echo -e "${RED}Unknown option: $1${NC}"
+            echo "Usage: ./run_all.sh [--setup|--analysis|--figures] [--fast|--bootstrap N]"
+            exit 1
+            ;;
+    esac
+done
 
 STEP=0
 
@@ -158,7 +191,7 @@ if [ "$RUN_ANALYSIS" = true ]; then
     echo "  - eICU-New (371,855 patients)"
     echo ""
 
-    python code/batch_analysis.py
+    python code/batch_analysis.py $BOOTSTRAP_ARGS
 
     echo ""
     echo "MIMIC-IV Subsets (SOFA + Care Frequency):"
@@ -166,7 +199,7 @@ if [ "$RUN_ANALYSIS" = true ]; then
     echo "  - MIMIC-IV Mech. Vent. (8,919 patients)"
     echo ""
 
-    python code/supplementary_analysis.py
+    python code/supplementary_analysis.py $BOOTSTRAP_ARGS
 
     echo ""
     echo -e "${GREEN}Batch analysis complete!${NC}"
