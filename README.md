@@ -33,12 +33,13 @@ uv pip install -r requirements.txt
 |---------|---|--------|-----------|--------|-----------|
 | MIMIC-III | 27,226 | 2001-2008 | 12.9% | OASIS, SAPS-II, APS-III | Yes |
 | MIMIC-IV | 85,242 | 2008-2022 | 10.9% | OASIS, SAPS-II, APS-III | Yes |
+| MIMIC Mouthcare | 8,675 | 2008-2019 | 27-34% | SOFA | Yes |
 | eICU | 289,503 | 2014-2015 | 8.7% | OASIS, SAPS-II, APS-III, APACHE | Yes |
 | eICU-New | 371,855 | 2020-2021 | 12.7% | OASIS, SAPS-II, APS-III, APACHE | Yes |
 | Amsterdam | 27,259 | 2013-2021 | 7.9% | SOFA, OASIS, SAPS-II, APS-III | No |
 | Zhejiang | 7,932 | 2011-2022 | 14.7% | SOFA, OASIS, SAPS-II, APS-III | No |
 
-**Total: 809,017 ICU admissions**
+**Total: 817,692 ICU admissions**
 
 ### Overall Drift by Dataset
 
@@ -63,13 +64,26 @@ uv pip install -r requirements.txt
 | **Hispanic** | - | - | - | -0.021 | **-0.078** |
 | **Asian** | **+0.114** | - | - | +0.046 | -0.040 |
 
+### MIMIC Mouthcare Cohort (Care Frequency Analysis)
+
+Additional analysis on 8,675 mechanically ventilated patients (2008-2019) with oral care frequency data:
+
+| Subgroup | AUC Change | Finding |
+|----------|------------|---------|
+| **Low-frequency care (Q4)** | +0.146 | Largest improvement |
+| **High-frequency care (Q1)** | +0.009 | Minimal change |
+| **Black patients** | -0.106 | Largest racial disparity |
+| **Hispanic patients** | -0.170 | Significant decline |
+| **White patients** | +0.043 | Modest improvement |
+
 ### Key Findings
 
 1. **COVID-era decline**: eICU-New (2020-21) shows universal performance degradation vs pre-COVID eICU (2014-15)
-2. **Hispanic patients most affected**: -0.078 AUC decline in COVID era (largest drop)
-3. **Asian patients improved most**: +0.114 AUC in MIMIC-IV over 14 years
-4. **Age divergence**: Young (18-44) generally improve while elderly (80+) decline
-5. **Geographic variation**: European/Asian datasets show improvement; US COVID-era shows decline
+2. **Hispanic patients most affected**: -0.078 AUC in COVID era; -0.170 in MIMIC mouthcare
+3. **Black patients**: Consistent underperformance (-0.106 in MIMIC mouthcare, -0.027 in eICU-New)
+4. **Asian patients improved most**: +0.114 AUC in MIMIC-IV over 14 years
+5. **Age divergence**: Young (18-44) generally improve while elderly (80+) decline
+6. **Care frequency matters**: Low-frequency care patients show +0.146 AUC improvement vs +0.009 for high-frequency
 
 ### Figures
 
@@ -148,10 +162,10 @@ Data-Drift/
 
 | File | Description |
 |------|-------------|
-| `output/all_datasets_drift_results.csv` | Full results (690 rows) |
+| `output/all_datasets_drift_results.csv` | Full multi-dataset results (690 rows) |
 | `output/all_datasets_drift_deltas.csv` | Drift changes (174 comparisons) |
-| `output/table1_overall_drift.csv` | Overall drift by dataset/score |
-| `output/table2_oasis_subgroup_drift.csv` | OASIS drift by subgroup |
+| `output/mimic_mouthcare/*` | MIMIC mouthcare analysis (care frequency, race, age) |
+| `output/amsterdam_icu/*` | Amsterdam ICU analysis |
 | `figures/fig1-7*.png` | Publication-quality figures |
 
 ---
