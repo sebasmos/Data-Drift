@@ -29,17 +29,25 @@ uv pip install -r requirements.txt
 
 ### Datasets Analyzed
 
+**Primary Datasets:**
+
 | Dataset | N | Period | Mortality | Scores | Race Data |
 |---------|---|--------|-----------|--------|-----------|
 | MIMIC-III | 27,226 | 2001-2008 | 12.9% | OASIS, SAPS-II, APS-III | Yes |
 | MIMIC-IV | 85,242 | 2008-2022 | 10.9% | OASIS, SAPS-II, APS-III | Yes |
-| MIMIC Mouthcare | 8,675 | 2008-2019 | 27-34% | SOFA | Yes |
 | eICU | 289,503 | 2014-2015 | 8.7% | OASIS, SAPS-II, APS-III, APACHE | Yes |
 | eICU-New | 371,855 | 2020-2021 | 12.7% | OASIS, SAPS-II, APS-III, APACHE | Yes |
 | Amsterdam | 27,259 | 2013-2021 | 7.9% | SOFA, OASIS, SAPS-II, APS-III | No |
 | Zhejiang | 7,932 | 2011-2022 | 14.7% | SOFA, OASIS, SAPS-II, APS-III | No |
 
-**Total: 817,692 ICU admissions**
+**Supplementary (MIMIC-IV subsets with care frequency data):**
+
+| Dataset | N | Period | Mortality | Analysis Focus |
+|---------|---|--------|-----------|----------------|
+| MIMIC-IV Mouthcare | 8,675 | 2008-2019 | 27-34% | Oral care frequency + race disparities |
+| MIMIC-IV Mech. Vent. | ~15,000 | 2008-2019 | 20-30% | Mechanical ventilation + care frequency |
+
+**Total: 809,017 primary + supplementary cohorts**
 
 ### Overall Drift by Dataset
 
@@ -64,9 +72,9 @@ uv pip install -r requirements.txt
 | **Hispanic** | - | - | - | -0.021 | **-0.078** |
 | **Asian** | **+0.114** | - | - | +0.046 | -0.040 |
 
-### MIMIC Mouthcare Cohort (Care Frequency Analysis)
+### Supplementary: MIMIC-IV Care Frequency Analysis
 
-Additional analysis on 8,675 mechanically ventilated patients (2008-2019) with oral care frequency data:
+Additional analysis on MIMIC-IV subsets with oral care frequency data (8,675 mouthcare + ~15,000 mech. vent. patients):
 
 | Subgroup | AUC Change | Finding |
 |----------|------------|---------|
@@ -91,7 +99,7 @@ Additional analysis on 8,675 mechanically ventilated patients (2008-2019) with o
 *Multi-panel summary: (A) Age group divergence, (B) Race disparities, (C) COVID impact, (D) Cross-dataset heatmap*
 
 <details>
-<summary>Additional Figures</summary>
+<summary>Additional Figures (Cross-Dataset)</summary>
 
 ![Overall Drift](figures/fig1_overall_drift_comparison.png)
 *Figure 1: Overall score performance trends*
@@ -110,6 +118,17 @@ Additional analysis on 8,675 mechanically ventilated patients (2008-2019) with o
 
 ![COVID Comparison](figures/fig6_covid_era_comparison.png)
 *Figure 6: Pre-COVID vs COVID era comparison*
+
+</details>
+
+<details>
+<summary>Supplementary Figures (MIMIC-IV Care Frequency)</summary>
+
+![MIMIC Mouthcare](output/mimic_mouthcare/mimic_mouthcare_drift_analysis.png)
+*Figure S1: MIMIC-IV Mouthcare cohort - SOFA drift by race, gender, age, and care frequency*
+
+![MIMIC Mech Vent](output/mimic/mimic_drift_analysis.png)
+*Figure S2: MIMIC-IV Mechanical Ventilation cohort - SOFA drift analysis*
 
 </details>
 
