@@ -175,13 +175,6 @@ Data-Drift/
 - [ ] **Decision threshold analysis**: How drift affects clinical decision-making at specific thresholds
 - [ ] **Fairness metrics**: Compute equalized odds, demographic parity across subgroups
 - [ ] **Intervention simulation**: Model impact of periodic recalibration on patient outcomes
-
-### Publication
-
-- [ ] **Manuscript preparation**: Draft methods and results sections
-- [ ] **Supplementary materials**: Compile all tables and sensitivity analyses
-- [ ] **Code release**: Clean and document code for reproducibility
-
 ---
 
 ## Citation
