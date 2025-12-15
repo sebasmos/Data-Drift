@@ -196,6 +196,7 @@ def fig2_age_stratified_drift(results, deltas):
                 yerr = np.array([np.array(aucs) - np.array(ci_lower),
                                 np.array(ci_upper) - np.array(aucs)])
                 yerr = np.nan_to_num(yerr, nan=0)
+                yerr = np.clip(yerr, 0, None)  # Error bars must be non-negative
                 ax.bar(x, aucs, color=colors, yerr=yerr, capsize=4)
             else:
                 ax.bar(x, aucs, color=colors)
@@ -284,6 +285,7 @@ def fig3_race_disparities(results, deltas):
                 yerr = np.array([np.array(aucs) - np.array(ci_lower),
                                 np.array(ci_upper) - np.array(aucs)])
                 yerr = np.nan_to_num(yerr, nan=0)
+                yerr = np.clip(yerr, 0, None)  # Error bars must be non-negative
                 ax.bar(x, aucs, color=colors, yerr=yerr, capsize=4)
             else:
                 ax.bar(x, aucs, color=colors)
@@ -346,6 +348,7 @@ def _plot_bar_with_ci(ax, data, x_col, y_col, hue_col, colors, yerr_lower=None, 
             upper = pivot_upper[col].values
             yerr = np.array([values - lower, upper - values])
             yerr = np.nan_to_num(yerr, nan=0)
+            yerr = np.clip(yerr, 0, None)  # Error bars must be non-negative
             ax.bar(x + offset, values, bar_width, label=col, color=color,
                    yerr=yerr, capsize=3, error_kw={'elinewidth': 1, 'capthick': 1})
         else:
