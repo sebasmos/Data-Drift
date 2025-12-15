@@ -419,7 +419,7 @@ def fig7_money_figure(results, deltas):
     ax1.set_xticklabels(['First Period', 'Last Period'])
     ax1.set_ylabel('OASIS AUC')
     ax1.set_title('A. Age Groups Diverge: Young Improve, Elderly Decline')
-    ax1.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8)
+    ax1.legend(loc='lower right', fontsize=7, ncol=2)
     ax1.set_ylim(0.5, 0.95)
 
     # Panel B: Race disparities (top right)
