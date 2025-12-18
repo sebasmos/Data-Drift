@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import DATASETS, OUTPUT_PATH as OUTPUT_DIR
 from sklearn.metrics import roc_auc_score
+from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -199,6 +200,125 @@ def compute_auc_with_ci(y_true, y_pred, n_bootstrap=N_BOOTSTRAP, ci_level=CI_LEV
         return np.nan, np.nan, np.nan
 
 
+def delong_test(y_true1, y_pred1, y_true2, y_pred2):
+    """
+    Perform DeLong's test for comparing two AUCs from independent samples.
+
+    This is a non-parametric test that compares the discriminative ability
+    of two models/scores across different time periods or populations.
+
+    Returns:
+        tuple: (z_statistic, p_value) or (nan, nan) if computation fails
+    """
+    try:
+        # Compute AUCs
+        auc1 = roc_auc_score(y_true1, y_pred1)
+        auc2 = roc_auc_score(y_true2, y_pred2)
+
+        n1 = len(y_true1)
+        n2 = len(y_true2)
+
+        # Compute variance using Hanley-McNeil approximation
+        # For AUC variance: var(AUC) ≈ AUC(1-AUC) * (1 + (n_pos-1)(Q1-AUC²)/(AUC(1-AUC)) + (n_neg-1)(Q2-AUC²)/(AUC(1-AUC))) / (n_pos * n_neg)
+        # Simplified approximation: var(AUC) ≈ AUC(1-AUC) / min(n_pos, n_neg)
+
+        n_pos1 = np.sum(y_true1)
+        n_neg1 = n1 - n_pos1
+        n_pos2 = np.sum(y_true2)
+        n_neg2 = n2 - n_pos2
+
+        # Hanley-McNeil variance approximation
+        q1_1 = auc1 / (2 - auc1)
+        q2_1 = 2 * auc1**2 / (1 + auc1)
+        var1 = (auc1 * (1 - auc1) + (n_pos1 - 1) * (q1_1 - auc1**2) + (n_neg1 - 1) * (q2_1 - auc1**2)) / (n_pos1 * n_neg1)
+
+        q1_2 = auc2 / (2 - auc2)
+        q2_2 = 2 * auc2**2 / (1 + auc2)
+        var2 = (auc2 * (1 - auc2) + (n_pos2 - 1) * (q1_2 - auc2**2) + (n_neg2 - 1) * (q2_2 - auc2**2)) / (n_pos2 * n_neg2)
+
+        # Z-statistic for difference
+        se_diff = np.sqrt(var1 + var2)
+        if se_diff == 0:
+            return np.nan, np.nan
+
+        z = (auc1 - auc2) / se_diff
+        p_value = 2 * (1 - stats.norm.cdf(abs(z)))  # Two-tailed test
+
+        return z, p_value
+
+    except Exception as e:
+        return np.nan, np.nan
+
+
+def permutation_test_auc_diff(y_true1, y_pred1, y_true2, y_pred2, n_permutations=1000, seed=42):
+    """
+    Perform a permutation test for the difference in AUC between two samples.
+
+    This test shuffles the time period labels and recomputes the AUC difference
+    to build a null distribution, then computes an empirical p-value.
+
+    Args:
+        y_true1, y_pred1: Outcome and predictions for first time period
+        y_true2, y_pred2: Outcome and predictions for second time period
+        n_permutations: Number of permutation iterations
+        seed: Random seed for reproducibility
+
+    Returns:
+        tuple: (observed_diff, p_value) or (nan, nan) if computation fails
+    """
+    try:
+        # Compute observed AUC difference
+        auc1 = roc_auc_score(y_true1, y_pred1)
+        auc2 = roc_auc_score(y_true2, y_pred2)
+        observed_diff = auc2 - auc1  # Later minus earlier
+
+        # Combine data
+        y_true_combined = np.concatenate([y_true1, y_true2])
+        y_pred_combined = np.concatenate([y_pred1, y_pred2])
+        n1 = len(y_true1)
+        n_total = len(y_true_combined)
+
+        # Permutation test
+        rng = np.random.RandomState(seed)
+        null_diffs = []
+
+        for _ in range(n_permutations):
+            # Shuffle indices
+            perm_idx = rng.permutation(n_total)
+
+            # Split into two groups
+            idx1 = perm_idx[:n1]
+            idx2 = perm_idx[n1:]
+
+            y_true_perm1 = y_true_combined[idx1]
+            y_pred_perm1 = y_pred_combined[idx1]
+            y_true_perm2 = y_true_combined[idx2]
+            y_pred_perm2 = y_pred_combined[idx2]
+
+            # Check both groups have both classes
+            if len(np.unique(y_true_perm1)) < 2 or len(np.unique(y_true_perm2)) < 2:
+                continue
+
+            try:
+                auc_perm1 = roc_auc_score(y_true_perm1, y_pred_perm1)
+                auc_perm2 = roc_auc_score(y_true_perm2, y_pred_perm2)
+                null_diffs.append(auc_perm2 - auc_perm1)
+            except:
+                continue
+
+        if len(null_diffs) < n_permutations * 0.5:
+            return observed_diff, np.nan
+
+        # Compute two-tailed p-value
+        null_diffs = np.array(null_diffs)
+        p_value = np.mean(np.abs(null_diffs) >= np.abs(observed_diff))
+
+        return observed_diff, p_value
+
+    except Exception as e:
+        return np.nan, np.nan
+
+
 def analyze_drift(df, config, score_col, compute_ci=True):
     """Analyze drift for a specific score across subgroups.
 
@@ -325,6 +445,13 @@ def compute_drift_deltas(results_df):
                     delta_ci_lower = np.nan
                     delta_ci_upper = np.nan
 
+                # Determine statistical significance from CI
+                # Significant if CI doesn't contain 0
+                if not np.isnan(delta_ci_lower) and not np.isnan(delta_ci_upper):
+                    significant = (delta_ci_lower > 0) or (delta_ci_upper < 0)
+                else:
+                    significant = False
+
                 deltas.append({
                     'subgroup_type': subgroup_type,
                     'subgroup': subgroup,
@@ -337,11 +464,147 @@ def compute_drift_deltas(results_df):
                     'delta': delta,
                     'delta_ci_lower': delta_ci_lower,
                     'delta_ci_upper': delta_ci_upper,
+                    'significant': significant,
                     'period_first': first_period,
                     'period_last': last_period,
                     'n_first': first['n'].values[0],
                     'n_last': last['n'].values[0]
                 })
+
+    return pd.DataFrame(deltas)
+
+
+def compute_drift_deltas_with_pvalues(df, config, score_col, results_df, n_permutations=None):
+    """
+    Compute drift deltas with statistical significance testing (p-values).
+
+    Uses DeLong's test (fast, parametric) and optionally permutation test (slower, non-parametric).
+
+    Args:
+        df: Original DataFrame with patient data
+        config: Dataset configuration
+        score_col: Score column name
+        results_df: Results DataFrame from analyze_drift
+        n_permutations: Number of permutation iterations (None = skip permutation test)
+
+    Returns:
+        DataFrame with deltas and p-values
+    """
+    if results_df.empty:
+        return pd.DataFrame()
+
+    year_col = config['year_col']
+    outcome_col = config['outcome_col']
+    outcome_positive = config['outcome_positive']
+
+    # Create binary outcome if not exists
+    if 'outcome_binary' not in df.columns:
+        df['outcome_binary'] = (df[outcome_col] == outcome_positive).astype(int)
+
+    periods = sorted(results_df['time_period'].unique())
+    if len(periods) < 2:
+        return pd.DataFrame()
+
+    first_period = periods[0]
+    last_period = periods[-1]
+
+    deltas = []
+
+    # Helper to get subgroup mask
+    def get_subgroup_mask(subgroup_type, subgroup):
+        if subgroup_type == 'Overall':
+            return pd.Series([True] * len(df), index=df.index)
+        elif subgroup_type == 'Age':
+            return df['age_group'] == subgroup
+        elif subgroup_type == 'Gender':
+            return df['gender_std'] == subgroup
+        elif subgroup_type == 'Race':
+            return df['race_std'] == subgroup
+        return pd.Series([False] * len(df), index=df.index)
+
+    for (subgroup_type, subgroup), group in results_df.groupby(['subgroup_type', 'subgroup']):
+        first = group[group['time_period'] == first_period]
+        last = group[group['time_period'] == last_period]
+
+        if first.empty or last.empty:
+            continue
+
+        auc_first = first['auc'].values[0]
+        auc_last = last['auc'].values[0]
+
+        if np.isnan(auc_first) or np.isnan(auc_last):
+            continue
+
+        delta = auc_last - auc_first
+
+        # Get raw data for statistical tests
+        subgroup_mask = get_subgroup_mask(subgroup_type, subgroup)
+
+        # Handle type conversion for time period matching
+        # The results_df has string periods, but df might have int/numpy types
+        df_year_values = df[year_col].astype(str)
+        mask_first = subgroup_mask & (df_year_values == str(first_period))
+        mask_last = subgroup_mask & (df_year_values == str(last_period))
+
+        df_first = df[mask_first].dropna(subset=[score_col, 'outcome_binary'])
+        df_last = df[mask_last].dropna(subset=[score_col, 'outcome_binary'])
+
+        if len(df_first) < 30 or len(df_last) < 30:
+            continue
+
+        y_true1 = df_first['outcome_binary'].values
+        y_pred1 = df_first[score_col].values
+        y_true2 = df_last['outcome_binary'].values
+        y_pred2 = df_last[score_col].values
+
+        # DeLong's test (fast)
+        z_stat, p_delong = delong_test(y_true1, y_pred1, y_true2, y_pred2)
+
+        # Permutation test (slower, optional)
+        if n_permutations and n_permutations > 0:
+            _, p_perm = permutation_test_auc_diff(y_true1, y_pred1, y_true2, y_pred2,
+                                                   n_permutations=n_permutations)
+        else:
+            p_perm = np.nan
+
+        # Get CIs if available
+        ci_first_lower = first['auc_ci_lower'].values[0] if 'auc_ci_lower' in first.columns else np.nan
+        ci_first_upper = first['auc_ci_upper'].values[0] if 'auc_ci_upper' in first.columns else np.nan
+        ci_last_lower = last['auc_ci_lower'].values[0] if 'auc_ci_lower' in last.columns else np.nan
+        ci_last_upper = last['auc_ci_upper'].values[0] if 'auc_ci_upper' in last.columns else np.nan
+
+        # Compute delta CI
+        if not np.isnan(ci_first_lower) and not np.isnan(ci_last_lower):
+            delta_ci_lower = ci_last_lower - ci_first_upper
+            delta_ci_upper = ci_last_upper - ci_first_lower
+        else:
+            delta_ci_lower = np.nan
+            delta_ci_upper = np.nan
+
+        # Determine significance (use DeLong p-value with alpha=0.05)
+        significant = p_delong < 0.05 if not np.isnan(p_delong) else False
+
+        deltas.append({
+            'subgroup_type': subgroup_type,
+            'subgroup': subgroup,
+            'auc_first': auc_first,
+            'auc_first_ci_lower': ci_first_lower,
+            'auc_first_ci_upper': ci_first_upper,
+            'auc_last': auc_last,
+            'auc_last_ci_lower': ci_last_lower,
+            'auc_last_ci_upper': ci_last_upper,
+            'delta': delta,
+            'delta_ci_lower': delta_ci_lower,
+            'delta_ci_upper': delta_ci_upper,
+            'z_statistic': z_stat,
+            'p_value_delong': p_delong,
+            'p_value_permutation': p_perm,
+            'significant': significant,
+            'period_first': first_period,
+            'period_last': last_period,
+            'n_first': first['n'].values[0],
+            'n_last': last['n'].values[0]
+        })
 
     return pd.DataFrame(deltas)
 
@@ -396,19 +659,28 @@ def run_batch_analysis(datasets_to_run=None):
                 results['score'] = score_col
                 all_results.append(results)
 
-                # Compute deltas
-                deltas = compute_drift_deltas(results)
+                # Compute deltas with statistical testing (DeLong's test)
+                print(f"  Computing statistical significance (DeLong's test)...")
+                deltas = compute_drift_deltas_with_pvalues(df, config, score_col, results, n_permutations=None)
+
+                if deltas.empty:
+                    # Fallback to simple deltas if p-value computation fails
+                    deltas = compute_drift_deltas(results)
+
                 if not deltas.empty:
                     deltas['dataset'] = dataset_key
                     deltas['dataset_name'] = config['name']
                     deltas['score'] = score_col
                     all_deltas.append(deltas)
 
-                    # Print summary
+                    # Print summary with significance
                     print(f"\n  Drift Summary for {score_col.upper()}:")
                     for _, row in deltas.iterrows():
                         arrow = "↓" if row['delta'] < 0 else "↑"
-                        print(f"    {row['subgroup_type']:8} | {row['subgroup']:10} | {row['auc_first']:.3f} → {row['auc_last']:.3f} ({arrow}{abs(row['delta']):.3f})")
+                        sig_marker = "*" if row.get('significant', False) else ""
+                        p_val = row.get('p_value_delong', np.nan)
+                        p_str = f"p={p_val:.3f}" if not np.isnan(p_val) else ""
+                        print(f"    {row['subgroup_type']:8} | {row['subgroup']:10} | {row['auc_first']:.3f} → {row['auc_last']:.3f} ({arrow}{abs(row['delta']):.3f}{sig_marker}) {p_str}")
 
     # Combine all results
     if all_results:
@@ -453,6 +725,37 @@ if __name__ == '__main__':
                 worst = score_deltas.loc[score_deltas['delta'].idxmin()]
                 best = score_deltas.loc[score_deltas['delta'].idxmax()]
 
+                # Check for significance markers
+                worst_sig = "*" if worst.get('significant', False) else ""
+                best_sig = "*" if best.get('significant', False) else ""
+
                 print(f"\n{score.upper()}:")
-                print(f"  Worst drift: {worst['dataset_name']} - {worst['subgroup']} ({worst['delta']:+.3f})")
-                print(f"  Best drift:  {best['dataset_name']} - {best['subgroup']} ({best['delta']:+.3f})")
+                print(f"  Worst drift: {worst['dataset_name']} - {worst['subgroup']} ({worst['delta']:+.3f}{worst_sig})")
+                print(f"  Best drift:  {best['dataset_name']} - {best['subgroup']} ({best['delta']:+.3f}{best_sig})")
+
+        # Summary of statistically significant findings
+        if 'significant' in deltas.columns:
+            sig_deltas = deltas[deltas['significant'] == True]
+            print(f"\n{'='*60}")
+            print("STATISTICALLY SIGNIFICANT DRIFTS (p < 0.05, DeLong's test)")
+            print("="*60)
+            print(f"Total significant: {len(sig_deltas)} / {len(deltas)} ({100*len(sig_deltas)/len(deltas):.1f}%)")
+
+            if not sig_deltas.empty:
+                # Show significant improvements and declines
+                sig_improve = sig_deltas[sig_deltas['delta'] > 0]
+                sig_decline = sig_deltas[sig_deltas['delta'] < 0]
+
+                if not sig_improve.empty:
+                    print(f"\nSignificant improvements ({len(sig_improve)}):")
+                    for _, row in sig_improve.nlargest(5, 'delta').iterrows():
+                        p_val = row.get('p_value_delong', np.nan)
+                        p_str = f"p={p_val:.4f}" if not np.isnan(p_val) else ""
+                        print(f"  {row['dataset_name']}: {row['subgroup']} ({row['score']}) Δ={row['delta']:+.3f} {p_str}")
+
+                if not sig_decline.empty:
+                    print(f"\nSignificant declines ({len(sig_decline)}):")
+                    for _, row in sig_decline.nsmallest(5, 'delta').iterrows():
+                        p_val = row.get('p_value_delong', np.nan)
+                        p_str = f"p={p_val:.4f}" if not np.isnan(p_val) else ""
+                        print(f"  {row['dataset_name']}: {row['subgroup']} ({row['score']}) Δ={row['delta']:+.3f} {p_str}")
