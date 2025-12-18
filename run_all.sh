@@ -185,7 +185,7 @@ if [ "$RUN_ANALYSIS" = true ]; then
     echo ""
     echo "Primary Datasets:"
     echo "  - MIMIC-IV (85,242 patients)"
-    echo "  - Amsterdam ICU (27,259 patients)"
+    echo "  - Saltz ICU (27,259 patients)"
     echo "  - Zhejiang ICU (7,932 patients)"
     echo "  - eICU (289,503 patients)"
     echo "  - eICU-New (371,855 patients)"

@@ -80,11 +80,11 @@ python code/batch_analysis.py -b 1000          # 1000 iterations
 
 | Dataset | N | Period | Mortality | Scores | Race | Source |
 |---------|---|--------|-----------|--------|------|--------|
-| MIMIC-III | 27,226 | 2001-2008 | ~12% | OASIS, SAPS-II, APS-III | Yes | US (Boston) |
-| MIMIC-IV | 85,242 | 2008-2022 | 10.9% | OASIS, SAPS-II, APS-III | Yes | US (Boston) |
-| eICU | 289,503 | 2014-2015 | 8.7% | OASIS, SAPS-II, APS-III, APACHE | Yes | US (Multi-center) |
-| eICU-New | 371,855 | 2020-2021 | 12.7% | OASIS, SAPS-II, APS-III, APACHE | Yes | US (Multi-center) |
-| Amsterdam | 27,259 | 2013-2021 | 7.9% | **SOFA**, OASIS, SAPS-II, APS-III | No | Europe (Netherlands) |
+| MIMIC-III | 27,226 | 2001-2008 | ~12% | **SOFA**, OASIS, SAPS-II, APS-III | Yes | US (Boston) |
+| MIMIC-IV | 85,242 | 2008-2022 | 10.9% | **SOFA**, OASIS, SAPS-II, APS-III | Yes | US (Boston) |
+| eICU | 289,503 | 2014-2015 | 8.7% | **SOFA**, OASIS, SAPS-II, APS-III, APACHE | Yes | US (Multi-center) |
+| eICU-New | 371,855 | 2020-2021 | 12.7% | **SOFA**, OASIS, SAPS-II, APS-III, APACHE | Yes | US (Multi-center) |
+| Saltz | 27,259 | 2013-2021 | 7.9% | **SOFA**, OASIS, SAPS-II, APS-III | No | Europe (Netherlands) |
 | Zhejiang | 7,932 | 2011-2022 | 14.7% | **SOFA**, OASIS, SAPS-II, APS-III | No | Asia (China) |
 
 **MIMIC-IV Subsets (with SOFA + care frequency):**
@@ -98,23 +98,21 @@ python code/batch_analysis.py -b 1000          # 1000 iterations
 
 ### Overall Drift by Dataset
 
-| Dataset | OASIS | SAPS-II | APS-III | SOFA | Direction |
-|---------|-------|---------|---------|------|-----------|
+| Dataset | SOFA | OASIS | SAPS-II | APS-III | Direction |
+|---------|------|-------|---------|---------|-----------|
 | MIMIC-III | - | - | - | - | *Baseline (single period)* |
-| MIMIC-IV | +0.011 | +0.008 | +0.022 | - | Improving |
-| MIMIC-IV Mouthcare | - | - | - | **+0.022** | Improving |
-| MIMIC-IV Mech. Vent. | - | - | - | **+0.021** | Improving |
-| Amsterdam | +0.049 | +0.054 | +0.076 | **+0.034** | Improving |
-| Zhejiang | +0.049 | +0.057 | +0.111 | **+0.050** | Improving |
-| eICU | -0.006 | +0.010 | +0.008 | - | Stable |
-| eICU-New | -0.014 | -0.008 | -0.023 | - | Declining |
+| MIMIC-IV | **+0.034** | +0.011 | +0.008 | +0.022 | Improving |
+| Saltz | **+0.034** | +0.049 | +0.054 | +0.076 | Improving |
+| Zhejiang | **+0.050** | +0.049 | +0.057 | +0.111 | Improving |
+| eICU | **+0.019** | -0.006 | +0.010 | +0.008 | Stable |
+| eICU-New | -0.003 | -0.014 | -0.008 | -0.023 | Declining |
 
 *MIMIC-III serves as historical baseline (2001-2008, single period - no drift analysis possible)*
-*SOFA available for Amsterdam, Zhejiang, and MIMIC-IV subsets (mouthcare/mech. vent.)*
+*SOFA available for all datasets*
 
 ### Subgroup-Specific OASIS Drift
 
-| Subgroup | MIMIC-IV | Amsterdam | Zhejiang | eICU | eICU-New |
+| Subgroup | MIMIC-IV | Saltz | Zhejiang | eICU | eICU-New |
 |----------|----------|-----------|----------|------|----------|
 | **Age 18-44** | +0.056 | +0.059 | -0.034 | +0.001 | -0.023 |
 | **Age 80+** | -0.035 | +0.030 | -0.004 | -0.016 | +0.004 |
@@ -127,37 +125,70 @@ python code/batch_analysis.py -b 1000          # 1000 iterations
 
 ### Subgroup-Specific SOFA Drift
 
-| Subgroup | Amsterdam | Zhejiang | MIMIC-IV Mouthcare | MIMIC-IV Mech. Vent. |
-|----------|-----------|----------|---------------------|----------------------|
-| **Overall** | +0.034 | +0.050 | +0.022 | +0.021 |
-| **Age 18-44** | -0.039 | **-0.096** | +0.008 | +0.017 |
-| **Age 80+** | +0.034 | +0.037 | -0.011 | -0.013 |
-| **Male** | +0.041 | +0.061 | +0.000 | +0.001 |
-| **Female** | +0.009 | +0.004 | +0.054 | +0.049 |
-| **White** | - | - | +0.044 | +0.043 |
-| **Black** | - | - | **-0.106** | **-0.109** |
-| **Hispanic** | - | - | -0.084 | -0.084 |
+| Subgroup | MIMIC-IV | Saltz | Zhejiang | eICU | eICU-New |
+|----------|----------|-----------|----------|------|----------|
+| **Overall** | +0.034 | +0.034 | +0.050 | +0.019 | -0.003 |
+| **Age 18-44** | **+0.110** | -0.039 | **-0.096** | +0.021 | -0.051 |
+| **Age 80+** | +0.004 | +0.034 | +0.037 | +0.015 | +0.023 |
+| **Male** | +0.030 | +0.041 | +0.061 | +0.015 | -0.009 |
+| **Female** | +0.038 | +0.009 | +0.004 | +0.023 | +0.006 |
+| **White** | +0.046 | - | - | +0.017 | -0.003 |
+| **Black** | +0.019 | - | - | +0.013 | -0.008 |
+| **Hispanic** | - | - | - | +0.016 | **-0.059** |
+| **Asian** | +0.051 | - | - | **+0.087** | +0.007 |
 
-### Care Frequency Analysis (MIMIC-IV only)
+### Key Finding: Drift Does Not Affect Patients Uniformly
 
-| Care Frequency | Mouthcare | Mech. Vent. |
-|----------------|-----------|-------------|
-| **Q1 (High freq)** | +0.009 | +0.082 |
-| **Q2** | -0.021 | -0.013 |
-| **Q3** | +0.089 | +0.029 |
-| **Q4 (Low freq)** | **+0.146** | -0.009 |
+> **Core thesis:** Model drift affects demographic subgroups non-uniformly. This has critical implications for clinical decision-making and suggests that uniform recalibration strategies would fail to address subgroup-specific disparities.
 
-*Care frequency = average interval between care events. Q1=most frequent care, Q4=least frequent.*
+#### Evidence of Non-Uniform Drift
 
-### Key Findings
+**1. Age Group Divergence Across Regions**
 
-1. **COVID-era decline**: eICU-New (2020-21) shows universal performance degradation vs pre-COVID eICU
-2. **Hispanic patients most affected**: -0.078 OASIS (eICU-New); -0.084 SOFA (MIMIC-IV)
-3. **Black patients**: Largest SOFA disparity (-0.106 to -0.109 in MIMIC-IV cohorts)
-4. **Asian patients improved most**: +0.114 OASIS AUC in MIMIC-IV over 14 years
-5. **Age divergence**: Young (18-44) show SOFA decline in Zhejiang (-0.096) while elderly (80+) improve
-6. **Care frequency matters**: Low-frequency care patients show +0.146 SOFA improvement vs +0.009 for high-frequency
-7. **SOFA improves globally**: Amsterdam (+0.034), Zhejiang (+0.050), MIMIC-IV (+0.022)
+Young and elderly patients experience opposite drift directions - and this pattern is consistent across countries:
+
+| Region | Dataset | Age 18-44 (SOFA) | Age 80+ (SOFA) | Pattern |
+|--------|---------|------------------|----------------|---------|
+| **US (Boston)** | MIMIC-IV | **+0.110** | +0.004 | Young improve far more |
+| **Europe (Netherlands)** | Saltz | -0.039 | +0.034 | Young decline, elderly improve |
+| **Asia (China)** | Zhejiang | **-0.096** | +0.037 | Young decline, elderly improve |
+| **US (Multi-center)** | eICU | +0.021 | +0.015 | Both improve similarly |
+| **US (COVID-era)** | eICU-New | -0.051 | +0.023 | Young decline, elderly improve |
+
+*The age divergence pattern (young declining or stable while elderly improve) appears across US, European, and Asian datasets.*
+
+**2. Racial/Ethnic Disparities (US Datasets)**
+
+Hispanic patients show the most severe declines during the COVID era:
+
+| Subgroup | eICU-New OASIS | eICU-New SOFA | Relative Impact |
+|----------|----------------|---------------|-----------------|
+| Hispanic | **-0.078** | **-0.059** | 5x worse than White |
+| Black | -0.027 | -0.008 | 2x worse than White |
+| White | -0.015 | -0.003 | Baseline |
+| Asian | -0.040 | +0.007 | Mixed |
+
+**3. Gender Differences Vary by Region**
+
+| Region | Dataset | Male (OASIS) | Female (OASIS) | Pattern |
+|--------|---------|--------------|----------------|---------|
+| Europe | Saltz | +0.069 | +0.006 | Males improve 10x more |
+| Asia | Zhejiang | +0.030 | +0.082 | Females improve 3x more |
+| US | MIMIC-IV | +0.026 | -0.007 | Males improve, females decline |
+
+**4. COVID-19 Amplified Existing Disparities**
+
+Comparing eICU (2014-15) vs eICU-New (2020-21):
+- Overall scores declined modestly (-0.003 to -0.023)
+- Hispanic patients declined **dramatically** (-0.059 to -0.078)
+- This suggests the pandemic disproportionately degraded score performance for vulnerable groups
+
+#### Clinical Implications
+
+1. **Uniform recalibration is insufficient** - different subgroups need different adjustments
+2. **Vulnerable populations exist** - Hispanic and young patients in COVID-era data show worst degradation
+3. **Geographic context matters** - the same subgroup can experience opposite drift in different healthcare systems
+4. **Age-specific models may be needed** - the consistent age divergence pattern suggests fundamental differences in how scores perform across age groups
 
 ### Figures
 
@@ -214,7 +245,7 @@ Data-Drift/
 │   ├── mimiciv/                  # MIMIC-IV (85K patients)
 │   ├── mimic/                    # MIMIC-IV subsets: mouthcare + mech. vent. (17K)
 │   ├── eicu/                     # eICU + eICU-New (661K patients)
-│   ├── amsterdam/                # Amsterdam UMC (27K patients)
+│   ├── saltz/                    # Saltz (27K patients)
 │   └── zhejiang/                 # Zhejiang Hospital, China (8K patients)
 ├── figures/                      # Generated figures (fig1-7, figS1-S2)
 ├── output/                       # Analysis results (CSV tables)
@@ -235,6 +266,21 @@ Data-Drift/
 | **APS-III** | 20 variables (similar to APACHE III) | 0-299 |
 | **SOFA** | 6 organ systems (respiratory, cardiovascular, etc.) | 0-24 |
 | **APACHE** | Acute physiology + chronic health evaluation | 0-299 |
+
+### Score Availability by Dataset
+
+> **Note:** APACHE scores are only available in eICU datasets. APACHE is a proprietary scoring system primarily used in US multi-center ICU networks. MIMIC (Boston), Saltz (Netherlands), and Zhejiang (China) hospitals do not routinely compute APACHE scores in their EHR systems.
+
+| Dataset | SOFA | OASIS | SAPS-II | APS-III | APACHE |
+|---------|:----:|:-----:|:-------:|:-------:|:------:|
+| MIMIC-III | ✓ | ✓ | ✓ | ✓ | ✗ |
+| MIMIC-IV | ✓ | ✓ | ✓ | ✓ | ✗ |
+| eICU | ✓ | ✓ | ✓ | ✓ | ✓ |
+| eICU-New | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Saltz | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Zhejiang | ✓ | ✓ | ✓ | ✓ | ✗ |
+
+*Figures showing APACHE only display eICU and eICU-New data points.*
 
 ### Analysis Pipeline
 

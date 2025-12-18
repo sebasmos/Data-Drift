@@ -3,6 +3,17 @@ Configuration file for drift analysis across multiple datasets.
 Edit this file to specify which dataset to analyze.
 """
 
+import os
+from pathlib import Path
+
+# ============================================================
+# BASE PATHS - Automatically detected based on script location
+# ============================================================
+_CONFIG_DIR = Path(__file__).parent  # code/
+_BASE_DIR = _CONFIG_DIR.parent        # Data-Drift/
+_DATA_DIR = _BASE_DIR / 'data'
+_OUTPUT_DIR = _BASE_DIR / 'output'
+
 # ============================================================
 # DATASET CONFIGURATIONS
 # ============================================================
@@ -10,7 +21,7 @@ Edit this file to specify which dataset to analyze.
 DATASETS = {
     'mimic': {
         'name': 'MIMIC (Mechanical Ventilation)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimic',
+        'data_path': str(_DATA_DIR / 'mimic'),
         'file': 'turning_interval_frequency.csv',
         'outcome_col': 'outcome',
         'outcome_positive': 'Deceased',  # Value indicating positive outcome (mortality)
@@ -34,7 +45,7 @@ DATASETS = {
 
     'mimic_mouthcare': {
         'name': 'MIMIC (Mouthcare Cohort)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimic',
+        'data_path': str(_DATA_DIR / 'mimic'),
         'file': 'mouthcare_interval_frequency.csv',
         'outcome_col': 'outcome',
         'outcome_positive': 'Deceased',
@@ -62,12 +73,12 @@ DATASETS = {
 
     'mimiciii': {
         'name': 'MIMIC-III (2001-2008)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimiciii',
+        'data_path': str(_DATA_DIR / 'mimic_iii'),
         'file': 'mimiciii_ml-scores_bias.csv',
         'outcome_col': 'death_hosp',
         'outcome_positive': 1,
         'score_col': 'oasis',  # Primary score
-        'score_cols': ['oasis', 'sapsii', 'apsiii'],  # All available scores
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All available scores including SOFA
         'year_col': 'anchor_year_group',
         'year_bins': None,  # Single period: 2001-2008
         'demographic_cols': {
@@ -79,18 +90,18 @@ DATASETS = {
             'los_icu': 'los_icu_day',
             'los_hospital': 'los_hospital_day'
         },
-        'has_precomputed_sofa': True,  # Uses other scores
+        'has_precomputed_sofa': True,
         'description': 'MIMIC-III ICU dataset (2001-2008) - single time bin'
     },
 
     'mimiciv': {
         'name': 'MIMIC-IV (2008-2022)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimiciv',
+        'data_path': str(_DATA_DIR / 'mimic_iv_x'),
         'file': 'mimiciv_ml-scores_bias.csv',
         'outcome_col': 'death_hosp',
         'outcome_positive': 1,
         'score_col': 'oasis',  # Primary score
-        'score_cols': ['oasis', 'sapsii', 'apsiii'],  # All available scores
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All available scores including SOFA
         'year_col': 'anchor_year_group',
         'year_bins': ['2008 - 2010', '2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
         'demographic_cols': {
@@ -108,12 +119,12 @@ DATASETS = {
 
     'eicu': {
         'name': 'eICU (2014-2015)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
+        'data_path': str(_DATA_DIR / 'eicu'),
         'file': 'eicu_ml-scores_bias.csv',
         'outcome_col': 'hosp_mort',
         'outcome_positive': 1,
         'score_col': 'oasis',  # Primary score
-        'score_cols': ['oasis', 'sapsii', 'apsiii', 'apachescore'],  # Includes APACHE
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii', 'apachescore'],  # All scores including SOFA
         'year_col': 'hospitaldischargeyear',
         'year_bins': None,  # Will use 2014, 2015
         'demographic_cols': {
@@ -132,12 +143,12 @@ DATASETS = {
 
     'eicu_new': {
         'name': 'eICU-New (2020-2021)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
+        'data_path': str(_DATA_DIR / 'eicu_new'),
         'file': 'eicu_new_ml-scores_bias.csv',
         'outcome_col': 'hosp_mort',
         'outcome_positive': 1,
         'score_col': 'oasis',  # Primary score
-        'score_cols': ['oasis', 'sapsii', 'apsiii', 'apachescore'],
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii', 'apachescore'],  # All scores including SOFA
         'year_col': 'hospitaldischargeyear',
         'year_bins': None,  # Will use 2020, 2021
         'demographic_cols': {
@@ -156,7 +167,7 @@ DATASETS = {
 
     'zhejiang': {
         'name': 'Zhejiang ICU (2011-2022)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\zhejiang',
+        'data_path': str(_DATA_DIR / 'zhejiang'),
         'file': 'zhejiang_ml-scores_bias.csv',
         'outcome_col': 'death_hosp',
         'outcome_positive': 1,
@@ -177,9 +188,9 @@ DATASETS = {
         'description': 'Zhejiang Provincial Hospital ICU (2011-2022, China)'
     },
 
-    'amsterdam_icu': {
-        'name': 'Amsterdam ICU (2013-2021)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\amsterdam',
+    'saltz': {
+        'name': 'Saltz ICU (2013-2021)',
+        'data_path': str(_DATA_DIR / 'saltz'),
         'file': 'salz_ml-scores_bias.csv',
         'outcome_col': 'death_hosp',
         'outcome_positive': 1,
@@ -198,7 +209,7 @@ DATASETS = {
             'bmi': 'bmi'
         },
         'has_precomputed_sofa': True,
-        'description': 'Amsterdam UMC ICU dataset (2013-2021)'
+        'description': 'Saltz ICU dataset (2013-2021)'
     },
 
     # ============================================================
@@ -207,7 +218,7 @@ DATASETS = {
 
     'eicu_v1': {
         'name': 'eICU v1 (Sepsis Cohort - Legacy)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
+        'data_path': str(_DATA_DIR / 'eicu'),
         'file': 'sepsis_adult_eicu_v1.csv',
         'outcome_col': 'hospitaldischargestatus',
         'outcome_positive': 'Expired',
@@ -227,7 +238,7 @@ DATASETS = {
 
     'eicu_v2': {
         'name': 'eICU v2 (Sepsis Cohort - Legacy)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
+        'data_path': str(_DATA_DIR / 'eicu'),
         'file': 'sepsis_adult_eicu_v2.csv',
         'outcome_col': 'hospitaldischargestatus',
         'outcome_positive': 'Expired',
@@ -249,12 +260,12 @@ DATASETS = {
 # ============================================================
 # ACTIVE DATASET - CHANGE THIS TO SWITCH DATASETS
 # ============================================================
-ACTIVE_DATASET = 'mimic_mouthcare'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'amsterdam_icu', etc.
+ACTIVE_DATASET = 'mimic_mouthcare'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'saltz', etc.
 
 # ============================================================
 # OUTPUT CONFIGURATION
 # ============================================================
-OUTPUT_PATH = r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\output'
+OUTPUT_PATH = str(_OUTPUT_DIR)
 
 # Create dataset-specific output subdirectories
 OUTPUT_SUBDIRS = True  # If True, creates output/mimic/, output/eicu_v1/, etc.

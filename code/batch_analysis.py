@@ -351,7 +351,7 @@ def run_batch_analysis(datasets_to_run=None):
 
     # Define which datasets to analyze
     # Note: mimiciii has only one time period (2001-2008) so no drift, but included for baseline comparison
-    temporal_datasets = ['mimiciii', 'mimiciv', 'amsterdam_icu', 'zhejiang', 'eicu', 'eicu_new']
+    temporal_datasets = ['mimiciii', 'mimiciv', 'saltz', 'zhejiang', 'eicu', 'eicu_new']
 
     if datasets_to_run is None:
         datasets_to_run = temporal_datasets
