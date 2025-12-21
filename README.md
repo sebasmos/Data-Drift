@@ -470,8 +470,7 @@ Care phenotypes represent a novel approach using **nursing care intensity patter
 @software{data_drift_2025,
   title={Subgroup-Specific Drift in ICU Severity Scores},
   author={Hamza, Nabulsi and Liu, Xiaoli and Celi, Leo Anthony and Cajas, Sebastian},
-  year={2025},
-  url={https://github.com/sebasmos/Data-Drift}
+  year={2025}
 }
 ```
 
