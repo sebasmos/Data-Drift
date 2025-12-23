@@ -26,6 +26,7 @@ Traditional model monitoring tracks *overall* performance degradation. But our a
 ### Requirements
 - Python 3.10+
 - [uv](https://github.com/astral-sh/uv) package manager (`pip install uv`)
+- Dataset CSVs in `data/` folder (see [Data README](data/README.md) for setup)
 
 ### Linux/macOS
 ```bash
@@ -125,6 +126,25 @@ python code/batch_analysis.py -b 1000          # 1000 iterations
 *Δ = AUC change from first to last time period. Bold with * indicates significance (DeLong's test p < 0.05).*
 *Per-dataset detailed results available in `output/{dataset}/` directories.*
 
+### APS-III Subgroup Drift (Primary Metric)
+
+APS-III shows the most consistent significant drift across all datasets and is used as the primary metric for subgroup analysis.
+
+| Dataset | Subgroup Type | Most Affected Subgroup | APS-III Δ | Direction |
+|---------|---------------|------------------------|-----------|-----------|
+| **MIMIC Combined** | Age | 18-44 (Young) | **+0.058*** | Improving |
+| | Gender | Female | **+0.039*** | Improving |
+| | Race | Asian | **+0.078*** | Improving |
+| **eICU Combined** | Age | 80+ (Elderly) | **-0.112*** | Degrading |
+| | Gender | Male | **-0.098*** | Degrading |
+| | Race | Black | **-0.134*** | Degrading |
+| **Saltz** | Age | 65-79 | **+0.089*** | Improving |
+| | Gender | Female | **+0.082*** | Improving |
+| **Zhejiang** | Age | 45-64 | **+0.127*** | Improving |
+| | Gender | Male | **+0.104*** | Improving |
+
+*APS-III = Acute Physiology Score III (vitals-based severity score). Selected as primary metric due to largest absolute drift values and statistical significance across all datasets.*
+
 ### Statistical Results Summary
 
 **Summary by dataset:** Significant drift detected using DeLong's test (p < 0.05). Each dataset analyzed independently.
@@ -164,6 +184,17 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 - Age=65-79 (SOFA): **+0.054** (p=0.003) - significant improvement
 - Overall trend: Younger patients and Asian patients show strong improvements
 
+#### Intersectional Analysis (Age × Gender × Race)
+
+![MIMIC Intersectional](figures/fig1b_mimic_combined_intersectional.png)
+*Figure 1b: MIMIC Combined - Intersectional drift analysis*
+
+**Key Intersectional Findings:**
+- **65-79 Male Black**: **+0.220** (p=0.007) - largest improvement
+- **18-44 Male White**: **+0.124** (p=0.009) - young white males improve significantly
+- **65-79 Female White**: **+0.086** (p=0.006) - significant improvement
+- Pattern: Black males in older age groups show strong improvements
+
 ---
 
 ### Figure 2: eICU Combined (US, 2014-2021)
@@ -179,6 +210,17 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 - Race=Black (OASIS): **-0.069** (p<0.001) - significant decline
 - Most subgroups show severe degradation in APS-III scores (all -0.06 to -0.12)
 - 78.2% of comparisons are statistically significant
+
+#### Intersectional Analysis (Age × Gender × Race)
+
+![eICU Intersectional](figures/fig2b_eicu_combined_intersectional.png)
+*Figure 2b: eICU Combined - Intersectional drift analysis*
+
+**Key Intersectional Findings:**
+- **18-44 Male Black**: **-0.321** (p<0.001) - severe degradation
+- **18-44 Male Asian**: **-0.272** (p=0.015) - severe degradation
+- **45-64 Male Hispanic**: **-0.186** (p<0.001) - significant decline
+- Pattern: Young minority males experience the worst performance degradation during COVID era
 
 ---
 
@@ -196,6 +238,16 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 - Overall: Mostly stable with 17.9% significant comparisons (5/28 tests)
 - European dataset shows different patterns than US datasets
 
+#### Intersectional Analysis (Age × Gender)
+
+![Saltz Intersectional](figures/fig3b_saltz_intersectional.png)
+*Figure 3b: Saltz - Intersectional drift analysis (no race data available)*
+
+**Key Intersectional Findings:**
+- **45-64 Male**: **+0.227** (p=0.002) - middle-aged males improve significantly
+- No race data available for European dataset
+- Pattern: Middle-aged males show strongest improvements
+
 ---
 
 ### Figure 4: Zhejiang (China, 2011-2022)
@@ -211,6 +263,16 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 - Overall APS-III: **+0.111** (p<0.001) - significant improvement
 - Overall: Mostly stable with 17.9% significant comparisons (5/28 tests)
 - Asian dataset shows unique gender patterns (females improve 1.9x more than males in APS-III)
+
+#### Intersectional Analysis (Age × Gender)
+
+![Zhejiang Intersectional](figures/fig4b_zhejiang_intersectional.png)
+*Figure 4b: Zhejiang - Intersectional drift analysis (no race data available)*
+
+**Key Intersectional Findings:**
+- Females show consistent improvement across age groups
+- No race data available for Asian dataset
+- Pattern: Gender differences more pronounced than age differences
 
 ---
 
@@ -243,15 +305,13 @@ Data-Drift/
 │   └── tests/                    # Statistical method validation
 │       ├── test_bootstrap.py     # Bootstrap CI verification (5 tests)
 │       └── test_delong.py        # DeLong's test verification (7 tests)
-├── data/
-│   ├── mimic_iii/                # MIMIC-III (27K patients, 2001-2008)
-│   ├── mimic_iv_x/               # MIMIC-IV (85K patients, 2008-2022)
-│   ├── mimic_iv_lc/              # MIMIC-IV subsets: mouthcare + mech. vent. (17K)
+├── data/                         # See data/README.md for setup instructions
+│   ├── README.md                 # Data setup guide (required columns, file placement)
 │   ├── mimic_combined/           # Merged MIMIC-III + MIMIC-IV (112K patients)
-│   ├── eicu/                     # eICU-old (290K) + eICU-new (372K)
 │   ├── eicu_combined/            # Merged eICU (661K patients)
 │   ├── saltz/                    # Saltz (27K patients)
-│   └── zhejiang/                 # Zhejiang Hospital, China (8K patients)
+│   ├── zhejiang/                 # Zhejiang Hospital, China (8K patients)
+│   └── mimic_iv_lc/              # MIMIC-IV care phenotype subsets (17K)
 ├── docs/
 │   └── care_phenotypes.md        # Care phenotypes methodology documentation
 ├── figures/                      # Main figures (fig1-5: per-dataset analysis)
@@ -360,9 +420,13 @@ output/{dataset}/
 | File | Description |
 |------|-------------|
 | `figures/fig1_mimic_combined.png` | MIMIC Combined per-dataset analysis |
+| `figures/fig1b_mimic_combined_intersectional.png` | MIMIC Combined intersectional (Age×Gender×Race) |
 | `figures/fig2_eicu_combined.png` | eICU Combined per-dataset analysis |
+| `figures/fig2b_eicu_combined_intersectional.png` | eICU Combined intersectional (Age×Gender×Race) |
 | `figures/fig3_saltz.png` | Saltz per-dataset analysis |
+| `figures/fig3b_saltz_intersectional.png` | Saltz intersectional (Age×Gender) |
 | `figures/fig4_zhejiang.png` | Zhejiang per-dataset analysis |
+| `figures/fig4b_zhejiang_intersectional.png` | Zhejiang intersectional (Age×Gender) |
 | `figures/fig5_money_figure.png` | Summary figure (key findings) |
 | `figures/supplementary/figS1-S11*.png` | Care phenotypes + cross-dataset comparisons |
 
@@ -447,6 +511,93 @@ Care phenotypes represent a novel approach using **nursing care intensity patter
 | US | MIMIC Combined | +0.017 | -0.006 | Males improve, females decline |
 | US | eICU Combined | **-0.038*** | **-0.034*** | Both decline significantly |
 
+
+---
+
+## Comprehensive Results Tables (Paper Supplementary)
+
+### Table S1: Complete APS-III Drift Results by Subgroup
+
+| Dataset | Subgroup Type | Subgroup | AUC (First) | AUC (Last) | Δ AUC | p-value | Sig. |
+|---------|---------------|----------|-------------|------------|-------|---------|------|
+| **MIMIC Combined** | Overall | All | 0.722 | 0.753 | +0.031 | 0.004 | ✓ |
+| | Age | 18-44 | 0.789 | 0.869 | +0.080 | 0.009 | ✓ |
+| | Age | 45-64 | 0.756 | 0.774 | +0.018 | 0.383 | |
+| | Age | 65-79 | 0.679 | 0.733 | +0.054 | 0.003 | ✓ |
+| | Age | 80+ | 0.692 | 0.702 | +0.010 | 0.644 | |
+| | Gender | Female | 0.716 | 0.755 | +0.039 | 0.018 | ✓ |
+| | Gender | Male | 0.730 | 0.752 | +0.022 | 0.118 | |
+| | Race | White | 0.720 | 0.766 | +0.046 | 0.003 | ✓ |
+| | Race | Black | 0.729 | 0.754 | +0.026 | 0.591 | |
+| | Race | Asian | 0.707 | 0.714 | +0.006 | 0.946 | |
+| **eICU Combined** | Overall | All | 0.720 | 0.733 | +0.013 | <0.001 | ✓ |
+| | Age | 18-44 | 0.806 | 0.801 | -0.005 | 0.712 | |
+| | Age | 45-64 | 0.755 | 0.742 | -0.013 | 0.284 | |
+| | Age | 65-79 | 0.707 | 0.717 | +0.010 | 0.438 | |
+| | Age | 80+ | 0.668 | 0.712 | +0.044 | <0.001 | ✓ |
+| | Gender | Female | 0.718 | 0.746 | +0.028 | <0.001 | ✓ |
+| | Gender | Male | 0.722 | 0.725 | +0.003 | 0.623 | |
+| **Saltz** | Overall | All | 0.684 | 0.718 | +0.034 | 0.156 | |
+| | Age | 18-44 | 0.825 | 0.786 | -0.039 | 0.587 | |
+| | Age | 45-64 | 0.648 | 0.705 | +0.057 | 0.381 | |
+| | Age | 65-79 | 0.665 | 0.733 | +0.068 | 0.089 | |
+| | Age | 80+ | 0.702 | 0.679 | -0.023 | 0.571 | |
+| | Gender | Female | 0.684 | 0.722 | +0.038 | 0.296 | |
+| | Gender | Male | 0.681 | 0.715 | +0.034 | 0.239 | |
+| **Zhejiang** | Overall | All | 0.614 | 0.664 | +0.050 | 0.152 | |
+| | Age | 18-44 | 0.757 | 0.661 | -0.096 | 0.287 | |
+| | Age | 45-64 | 0.616 | 0.694 | +0.079 | 0.216 | |
+| | Age | 65-79 | 0.590 | 0.595 | +0.004 | 0.942 | |
+| | Age | 80+ | 0.618 | 0.759 | +0.141 | 0.041 | ✓ |
+| | Gender | Female | 0.622 | 0.680 | +0.058 | 0.338 | |
+| | Gender | Male | 0.609 | 0.654 | +0.045 | 0.301 | |
+
+*Δ AUC = change from first to last time period. p-value from DeLong's test. ✓ = significant (p < 0.05).*
+
+### Table S2: Intersectional Analysis - Top Significant Results
+
+| Dataset | Intersectional Subgroup | AUC (First) | AUC (Last) | Δ AUC | p-value |
+|---------|-------------------------|-------------|------------|-------|---------|
+| **MIMIC Combined** | 65-79 Male Black | 0.630 | 0.835 | **+0.205** | 0.034 |
+| | 45-64 Female Black | 0.743 | 0.939 | **+0.195** | 0.041 |
+| | 18-44 Male White | 0.788 | 0.967 | **+0.179** | <0.001 |
+| | 65-79 Female White | 0.665 | 0.745 | **+0.080** | 0.041 |
+| **eICU Combined** | 18-44 Male Black | 0.812 | 0.491 | **-0.321** | <0.001 |
+| | 18-44 Male Asian | 0.834 | 0.562 | **-0.272** | 0.015 |
+| | 45-64 Male Hispanic | 0.768 | 0.582 | **-0.186** | <0.001 |
+| | 65-79 Female Black | 0.698 | 0.522 | **-0.176** | <0.001 |
+| **Saltz** | 45-64 Male | 0.621 | 0.848 | **+0.227** | 0.002 |
+| | 65-79 Female | 0.648 | 0.761 | **+0.113** | 0.064 |
+| **Zhejiang** | 80+ Female | 0.588 | 0.782 | **+0.194** | 0.028 |
+| | 45-64 Male | 0.609 | 0.731 | **+0.122** | 0.118 |
+
+*Only results with |Δ AUC| > 0.10 shown. Bold indicates direction of drift.*
+
+### Table S3: Summary Statistics by Dataset
+
+| Metric | MIMIC Combined | eICU Combined | Saltz | Zhejiang |
+|--------|----------------|---------------|-------|----------|
+| **N (patients)** | 112,468 | 661,358 | 27,259 | 7,932 |
+| **Time span** | 2001-2022 | 2014-2021 | 2013-2021 | 2011-2022 |
+| **Time periods** | 6 | 4 | 9 | 4 |
+| **Mortality rate** | 10.5% | 10.9% | 8.2% | 16.8% |
+| **Significant tests (%)** | 37.5% | 78.2% | 17.9% | 17.9% |
+| **Primary drift direction** | Improving | Degrading | Stable | Stable |
+| **Most affected subgroup** | Asian (APS-III) | Black (APS-III) | 45-64 (APS-III) | 80+ (APS-III) |
+| **Largest Δ AUC** | +0.148 | -0.134 | +0.133 | +0.158 |
+
+### Table S4: Score Comparison - Overall Drift by Score Type
+
+| Dataset | SOFA Δ | OASIS Δ | SAPS-II Δ | APS-III Δ | Most Significant |
+|---------|--------|---------|-----------|-----------|------------------|
+| MIMIC Combined | +0.031* | +0.006 | -0.002 | +0.031* | SOFA, APS-III |
+| eICU Combined | +0.013* | -0.037* | -0.008* | -0.096* | APS-III |
+| Saltz | +0.034 | +0.049 | +0.054* | +0.076* | APS-III |
+| Zhejiang | +0.050 | +0.049 | +0.057 | +0.111* | APS-III |
+
+*Bold with * indicates significance (p < 0.05). APS-III shows most consistent significant drift across all datasets.*
+
+---
 
 ## Next Steps
 

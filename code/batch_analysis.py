@@ -402,6 +402,34 @@ def analyze_drift(df, config, score_col, compute_ci=True):
                 if len(subset) >= 30:  # Lower threshold for minority groups
                     _compute_and_append(subset, 'Race', race, period)
 
+    # Intersectional analysis (Age x Gender x Race)
+    # Per Hamza's suggestion: analyze combinations of all three demographics
+    if 'age_group' in df.columns and 'gender_std' in df.columns:
+        print(f"  Computing intersectional analysis (Age x Gender" + (" x Race)..." if 'race_std' in df.columns else ")..."))
+
+        genders = ['Male', 'Female']
+        races = ['White', 'Black', 'Hispanic', 'Asian'] if 'race_std' in df.columns else [None]
+
+        for age_group in AGE_LABELS:
+            for gender in genders:
+                for race in races:
+                    for period in time_periods:
+                        if race is not None:
+                            subset = df[(df['age_group'] == age_group) &
+                                       (df['gender_std'] == gender) &
+                                       (df['race_std'] == race) &
+                                       (df[year_col] == period)]
+                            subgroup_label = f"{age_group}_{gender}_{race}"
+                        else:
+                            subset = df[(df['age_group'] == age_group) &
+                                       (df['gender_std'] == gender) &
+                                       (df[year_col] == period)]
+                            subgroup_label = f"{age_group}_{gender}"
+
+                        # Minimum sample size for intersectional groups
+                        if len(subset) >= 30:
+                            _compute_and_append(subset, 'Intersectional', subgroup_label, period)
+
     return pd.DataFrame(results)
 
 
@@ -520,6 +548,15 @@ def compute_drift_deltas_with_pvalues(df, config, score_col, results_df, n_permu
             return df['gender_std'] == subgroup
         elif subgroup_type == 'Race':
             return df['race_std'] == subgroup
+        elif subgroup_type == 'Intersectional':
+            # Parse intersectional label: "Age_Gender_Race" or "Age_Gender"
+            parts = subgroup.split('_')
+            if len(parts) == 3:
+                age, gender, race = parts
+                return (df['age_group'] == age) & (df['gender_std'] == gender) & (df['race_std'] == race)
+            elif len(parts) == 2:
+                age, gender = parts
+                return (df['age_group'] == age) & (df['gender_std'] == gender)
         return pd.Series([False] * len(df), index=df.index)
 
     for (subgroup_type, subgroup), group in results_df.groupby(['subgroup_type', 'subgroup']):

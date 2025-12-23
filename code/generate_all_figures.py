@@ -198,6 +198,150 @@ def figS3_overall_drift_by_dataset(results, deltas):
     print("Saved: supplementary/figS3_overall_drift_comparison.png")
 
 
+def create_intersectional_figure(results, deltas, dataset_key, fig_num):
+    """Create an intersectional analysis figure showing Age x Gender x Race combinations.
+
+    Per Hamza's suggestion (Dec 23, 2025): Analyze combinations of age, gender, and race
+    to identify compounded disparities at intersections.
+
+    Creates a grouped bar chart showing drift by:
+    - X-axis: Age groups
+    - Colors: Gender (Male/Female)
+    - Grouped by: Race (if available)
+    """
+    # Filter data for this dataset
+    ds_deltas = deltas[deltas['dataset'] == dataset_key].copy() if deltas is not None else None
+
+    if ds_deltas is None or ds_deltas.empty:
+        return
+
+    # Get intersectional data
+    intersect_data = ds_deltas[ds_deltas['subgroup_type'] == 'Intersectional'].copy()
+
+    if intersect_data.empty:
+        print(f"  No intersectional data for {dataset_key}")
+        return
+
+    dataset_name = ds_deltas['dataset_name'].iloc[0].split(' (')[0] if 'dataset_name' in ds_deltas.columns else dataset_key
+
+    # Use APS-III as primary score (per Dec 23 call decision), fallback to oasis
+    primary_score = 'aps_iii' if 'aps_iii' in intersect_data['score'].unique() else 'oasis'
+    if primary_score not in intersect_data['score'].unique():
+        primary_score = intersect_data['score'].iloc[0]
+
+    score_data = intersect_data[intersect_data['score'] == primary_score].copy()
+
+    if score_data.empty:
+        return
+
+    # Parse intersectional labels
+    def parse_label(label):
+        parts = label.split('_')
+        if len(parts) == 3:
+            return {'age': parts[0], 'gender': parts[1], 'race': parts[2]}
+        elif len(parts) == 2:
+            return {'age': parts[0], 'gender': parts[1], 'race': None}
+        return None
+
+    score_data['parsed'] = score_data['subgroup'].apply(parse_label)
+    score_data = score_data[score_data['parsed'].notna()]
+
+    if score_data.empty:
+        return
+
+    score_data['age'] = score_data['parsed'].apply(lambda x: x['age'])
+    score_data['gender'] = score_data['parsed'].apply(lambda x: x['gender'])
+    score_data['race'] = score_data['parsed'].apply(lambda x: x['race'])
+
+    has_race = score_data['race'].notna().any()
+
+    # Create figure
+    if has_race:
+        races = [r for r in ['White', 'Black', 'Hispanic', 'Asian'] if r in score_data['race'].unique()]
+        n_races = len(races)
+        fig, axes = plt.subplots(1, n_races, figsize=(5 * n_races, 6), sharey=True)
+        if n_races == 1:
+            axes = [axes]
+    else:
+        fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+        axes = [ax]
+        races = [None]
+
+    age_order = ['18-44', '45-64', '65-79', '80+']
+    gender_colors = {'Male': '#4c72b0', 'Female': '#dd8452'}
+    bar_width = 0.35
+
+    for ax_idx, race in enumerate(races):
+        ax = axes[ax_idx]
+
+        if race is not None:
+            race_data = score_data[score_data['race'] == race]
+            title = f'{race}'
+        else:
+            race_data = score_data
+            title = 'All Patients'
+
+        # Prepare data for grouped bar chart
+        x = np.arange(len(age_order))
+        male_deltas = []
+        female_deltas = []
+        male_sig = []
+        female_sig = []
+
+        for age in age_order:
+            male_row = race_data[(race_data['age'] == age) & (race_data['gender'] == 'Male')]
+            female_row = race_data[(race_data['age'] == age) & (race_data['gender'] == 'Female')]
+
+            male_deltas.append(male_row['delta'].values[0] if not male_row.empty else 0)
+            female_deltas.append(female_row['delta'].values[0] if not female_row.empty else 0)
+            male_sig.append(male_row['significant'].values[0] if not male_row.empty and 'significant' in male_row.columns else False)
+            female_sig.append(female_row['significant'].values[0] if not female_row.empty and 'significant' in female_row.columns else False)
+
+        # Plot bars
+        bars_male = ax.bar(x - bar_width/2, male_deltas, bar_width, label='Male',
+                           color=gender_colors['Male'], alpha=0.8)
+        bars_female = ax.bar(x + bar_width/2, female_deltas, bar_width, label='Female',
+                             color=gender_colors['Female'], alpha=0.8)
+
+        # Add significance markers
+        for i, (m_sig, f_sig) in enumerate(zip(male_sig, female_sig)):
+            if m_sig:
+                y_pos = male_deltas[i] + 0.005 if male_deltas[i] >= 0 else male_deltas[i] - 0.015
+                ax.text(x[i] - bar_width/2, y_pos, '*', ha='center', va='bottom' if male_deltas[i] >= 0 else 'top',
+                       fontsize=14, fontweight='bold', color='black')
+            if f_sig:
+                y_pos = female_deltas[i] + 0.005 if female_deltas[i] >= 0 else female_deltas[i] - 0.015
+                ax.text(x[i] + bar_width/2, y_pos, '*', ha='center', va='bottom' if female_deltas[i] >= 0 else 'top',
+                       fontsize=14, fontweight='bold', color='black')
+
+        ax.axhline(y=0, color='black', linewidth=0.8)
+        ax.set_xticks(x)
+        ax.set_xticklabels(age_order, fontsize=10)
+        ax.set_title(title, fontsize=12, fontweight='bold')
+
+        if ax_idx == 0:
+            ax.set_ylabel(f'{primary_score.upper()} AUC Change (Δ)', fontsize=11)
+            ax.legend(title='Gender', loc='best', fontsize=9)
+
+        ax.set_xlabel('Age Group', fontsize=11)
+
+        # Set symmetric y-limits
+        all_vals = male_deltas + female_deltas
+        if all_vals:
+            max_abs = max(abs(min(all_vals)), abs(max(all_vals)), 0.05)
+            ax.set_ylim(-max_abs - 0.02, max_abs + 0.02)
+
+    plt.suptitle(f'{dataset_name}: Intersectional Drift Analysis (Age × Gender' + (' × Race)' if has_race else ')'),
+                 fontsize=14, y=1.02)
+    plt.tight_layout()
+
+    # Save
+    output_name = f'fig{fig_num}b_{dataset_key}_intersectional.png'
+    fig.savefig(FIGURES_DIR / output_name, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"Saved: {output_name}")
+
+
 def create_per_dataset_figure(results, deltas, dataset_key, fig_num):
     """Create a comprehensive figure for a SINGLE dataset showing non-uniform subgroup drift.
 
@@ -414,6 +558,9 @@ def create_per_dataset_figure(results, deltas, dataset_key, fig_num):
     fig.savefig(FIGURES_DIR / output_name, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"Saved: {output_name}")
+
+    # Generate separate intersectional figure for this dataset
+    create_intersectional_figure(results, deltas, dataset_key, fig_num)
 
 
 def figS4_age_stratified_comparison(results, deltas):
