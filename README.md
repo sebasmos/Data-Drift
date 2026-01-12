@@ -198,7 +198,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Classification Metrics Drift (SOFA ≥ 10 Threshold)
 
 ![MIMIC VA CAN Drift](figures/fig6b_mimic_combined_va_can_drift.png)
-*Figure 1c: MIMIC Combined - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, FPR, NPV, PPV, TPR from first to last time period with 95% CIs.*
+*Figure 1c: MIMIC Combined - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, Sensitivity (TPR), Specificity (1-FPR), PPV, NPV from first to last time period with 95% CIs.*
 
 #### Calibration Metrics (SMR & Brier Score)
 
@@ -208,7 +208,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Fairness Metrics
 
 ![MIMIC Fairness](figures/fig8_mimic_combined_fairness.png)
-*Figure 1e: MIMIC Combined - Demographic parity and equalized odds over time*
+*Figure 1e: MIMIC Combined - Fairness metrics by subgroup (SOFA ≥ 10). Shows Sensitivity and Specificity over time for specific categories: Gender (Male/Female), Race (White/Black/Hispanic/Asian), and Age groups (18-44/45-64/65-79/80+).*
 
 ---
 
@@ -240,7 +240,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Classification Metrics Drift (SOFA ≥ 10 Threshold)
 
 ![eICU VA CAN Drift](figures/fig6b_eicu_combined_va_can_drift.png)
-*Figure 2c: eICU Combined - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, FPR, NPV, PPV, TPR from first to last time period with 95% CIs.*
+*Figure 2c: eICU Combined - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, Sensitivity (TPR), Specificity (1-FPR), PPV, NPV from first to last time period with 95% CIs.*
 
 #### Calibration Metrics (SMR & Brier Score)
 
@@ -250,7 +250,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Fairness Metrics
 
 ![eICU Fairness](figures/fig8_eicu_combined_fairness.png)
-*Figure 2e: eICU Combined - Demographic parity and equalized odds over time*
+*Figure 2e: eICU Combined - Fairness metrics by subgroup (SOFA ≥ 10). Shows Sensitivity and Specificity over time for specific categories: Gender (Male/Female), Race (White/Black/Hispanic/Asian), and Age groups (18-44/45-64/65-79/80+).*
 
 ---
 
@@ -281,7 +281,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Classification Metrics Drift (SOFA ≥ 10 Threshold)
 
 ![Saltz VA CAN Drift](figures/fig6b_saltz_va_can_drift.png)
-*Figure 3c: Saltz - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, FPR, NPV, PPV, TPR from first to last time period with 95% CIs.*
+*Figure 3c: Saltz - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, Sensitivity (TPR), Specificity (1-FPR), PPV, NPV from first to last time period with 95% CIs.*
 
 #### Calibration Metrics (SMR & Brier Score)
 
@@ -291,7 +291,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Fairness Metrics
 
 ![Saltz Fairness](figures/fig8_saltz_fairness.png)
-*Figure 3e: Saltz - Demographic parity and equalized odds over time*
+*Figure 3e: Saltz - Fairness metrics by subgroup (SOFA ≥ 10). Shows Sensitivity and Specificity over time for specific categories: Gender (Male/Female) and Age groups (18-44/45-64/65-79/80+). Note: No race data available for European dataset.*
 
 ---
 
@@ -322,7 +322,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Classification Metrics Drift (SOFA ≥ 10 Threshold)
 
 ![Zhejiang VA CAN Drift](figures/fig6b_zhejiang_va_can_drift.png)
-*Figure 4c: Zhejiang - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, FPR, NPV, PPV, TPR from first to last time period with 95% CIs.*
+*Figure 4c: Zhejiang - Performance drift in classification metrics at SOFA ≥ 10 threshold (JAMA Health Forum 2025 format). Shows absolute change (%) in Accuracy, F1, Sensitivity (TPR), Specificity (1-FPR), PPV, NPV from first to last time period with 95% CIs.*
 
 #### Calibration Metrics (SMR & Brier Score)
 
@@ -332,7 +332,7 @@ Each figure shows a comprehensive 4-panel analysis for one dataset:
 #### Fairness Metrics
 
 ![Zhejiang Fairness](figures/fig8_zhejiang_fairness.png)
-*Figure 4e: Zhejiang - Demographic parity and equalized odds over time*
+*Figure 4e: Zhejiang - Fairness metrics by subgroup (SOFA ≥ 10). Shows Sensitivity and Specificity over time for specific categories: Gender (Male/Female) and Age groups (18-44/45-64/65-79/80+). Note: No race data available for Asian dataset.*
 
 ---
 

@@ -702,6 +702,9 @@ def analyze_xiaoli_metrics(df, config, score_col='sofa'):
                 _compute_metrics_for_subset(subset, 'Race', race, period)
 
     # 3. Fairness metrics per time period
+    # Also track detailed per-subgroup metrics
+    fairness_detailed_results = []
+
     for period in time_periods:
         period_df = df[df[year_col] == period]
 
@@ -716,6 +719,19 @@ def analyze_xiaoli_metrics(df, config, score_col='sofa'):
                 'tpr_diff': gender_fairness['tpr_diff'],
                 'fpr_diff': gender_fairness['fpr_diff']
             })
+            # Save detailed per-subgroup metrics
+            for subgroup, metrics in gender_fairness.get('group_metrics', {}).items():
+                fairness_detailed_results.append({
+                    'time_period': str(period),
+                    'group_type': 'Gender',
+                    'subgroup': subgroup,
+                    'n': metrics.get('n', 0),
+                    'positive_rate': metrics.get('positive_rate', np.nan),
+                    'sensitivity': metrics.get('tpr', np.nan),
+                    'specificity': 1 - metrics.get('fpr', np.nan) if metrics.get('fpr') is not None else np.nan,
+                    'tpr': metrics.get('tpr', np.nan),
+                    'fpr': metrics.get('fpr', np.nan)
+                })
 
         # Fairness by race
         if 'race_std' in period_df.columns:
@@ -728,6 +744,19 @@ def analyze_xiaoli_metrics(df, config, score_col='sofa'):
                 'tpr_diff': race_fairness['tpr_diff'],
                 'fpr_diff': race_fairness['fpr_diff']
             })
+            # Save detailed per-subgroup metrics
+            for subgroup, metrics in race_fairness.get('group_metrics', {}).items():
+                fairness_detailed_results.append({
+                    'time_period': str(period),
+                    'group_type': 'Race',
+                    'subgroup': subgroup,
+                    'n': metrics.get('n', 0),
+                    'positive_rate': metrics.get('positive_rate', np.nan),
+                    'sensitivity': metrics.get('tpr', np.nan),
+                    'specificity': 1 - metrics.get('fpr', np.nan) if metrics.get('fpr') is not None else np.nan,
+                    'tpr': metrics.get('tpr', np.nan),
+                    'fpr': metrics.get('fpr', np.nan)
+                })
 
         # Fairness by age
         if 'age_group' in period_df.columns:
@@ -740,11 +769,25 @@ def analyze_xiaoli_metrics(df, config, score_col='sofa'):
                 'tpr_diff': age_fairness['tpr_diff'],
                 'fpr_diff': age_fairness['fpr_diff']
             })
+            # Save detailed per-subgroup metrics
+            for subgroup, metrics in age_fairness.get('group_metrics', {}).items():
+                fairness_detailed_results.append({
+                    'time_period': str(period),
+                    'group_type': 'Age',
+                    'subgroup': subgroup,
+                    'n': metrics.get('n', 0),
+                    'positive_rate': metrics.get('positive_rate', np.nan),
+                    'sensitivity': metrics.get('tpr', np.nan),
+                    'specificity': 1 - metrics.get('fpr', np.nan) if metrics.get('fpr') is not None else np.nan,
+                    'tpr': metrics.get('tpr', np.nan),
+                    'fpr': metrics.get('fpr', np.nan)
+                })
 
     return (
         pd.DataFrame(classification_results),
         pd.DataFrame(calibration_results),
-        pd.DataFrame(fairness_results)
+        pd.DataFrame(fairness_results),
+        pd.DataFrame(fairness_detailed_results)
     )
 
 
@@ -1122,7 +1165,7 @@ def run_batch_analysis(datasets_to_run=None):
         sofa_col = 'sofa' if 'sofa' in df.columns else None
         if sofa_col:
             print(f"\n  Running Xiaoli metrics analysis (SOFA>={SOFA_THRESHOLD} threshold)...")
-            class_results, calib_results, fairness_results = analyze_xiaoli_metrics(df, config, sofa_col)
+            class_results, calib_results, fairness_results, fairness_detailed = analyze_xiaoli_metrics(df, config, sofa_col)
 
             # Save Xiaoli metrics to dataset directory
             dataset_dir = Path(OUTPUT_DIR) / dataset_key
@@ -1139,6 +1182,10 @@ def run_batch_analysis(datasets_to_run=None):
             if not fairness_results.empty:
                 fairness_results.to_csv(dataset_dir / 'fairness_metrics.csv', index=False)
                 print(f"    Saved fairness metrics (demographic parity, equalized odds)")
+
+            if not fairness_detailed.empty:
+                fairness_detailed.to_csv(dataset_dir / 'fairness_detailed.csv', index=False)
+                print(f"    Saved detailed fairness metrics per subgroup (Gender: Male/Female, Race, Age)")
 
         # Export per-dataset tables (not cross-dataset)
         if dataset_results and dataset_deltas:

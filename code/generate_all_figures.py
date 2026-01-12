@@ -224,8 +224,8 @@ def create_intersectional_figure(results, deltas, dataset_key, fig_num):
 
     dataset_name = ds_deltas['dataset_name'].iloc[0].split(' (')[0] if 'dataset_name' in ds_deltas.columns else dataset_key
 
-    # Use APS-III as primary score (per Dec 23 call decision), fallback to oasis
-    primary_score = 'aps_iii' if 'aps_iii' in intersect_data['score'].unique() else 'oasis'
+    # Use SOFA as primary score, fallback to oasis
+    primary_score = 'sofa' if 'sofa' in intersect_data['score'].unique() else 'oasis'
     if primary_score not in intersect_data['score'].unique():
         primary_score = intersect_data['score'].iloc[0]
 
@@ -373,8 +373,8 @@ def create_per_dataset_figure(results, deltas, dataset_key, fig_num):
     else:
         fig, axes = plt.subplots(2, 2, figsize=(14, 12))
 
-    # Use OASIS as primary score (or first available)
-    primary_score = 'oasis' if 'oasis' in ds_results['score'].unique() else ds_results['score'].iloc[0]
+    # Use SOFA as primary score (or first available)
+    primary_score = 'sofa' if 'sofa' in ds_results['score'].unique() else ds_results['score'].iloc[0]
     score_data = ds_results[ds_results['score'] == primary_score]
 
     time_periods = sorted(score_data['time_period'].unique())
@@ -1561,57 +1561,175 @@ def create_calibration_figure(dataset_key, dataset_name):
 
 def create_fairness_figure(dataset_key, dataset_name):
     """
-    Create fairness metrics figure showing demographic parity and equalized odds over time.
-    Per Xiaoli's recommendation.
+    Create fairness metrics figure showing sensitivity, specificity, and positive rate
+    for specific subgroups: Gender (Male/Female), Race, and Age.
+    Per Xiaoli's recommendation - updated to show specific categories.
     """
-    fairness_file = OUTPUT_DIR / dataset_key / 'fairness_metrics.csv'
-    if not fairness_file.exists():
+    # Try to load detailed fairness metrics first
+    detailed_file = OUTPUT_DIR / dataset_key / 'fairness_detailed.csv'
+    summary_file = OUTPUT_DIR / dataset_key / 'fairness_metrics.csv'
+
+    if not detailed_file.exists() and not summary_file.exists():
         print(f"  Skipping fairness figure for {dataset_key}: no data")
         return None
 
-    df = pd.read_csv(fairness_file)
+    # Use detailed metrics if available, otherwise fall back to summary
+    if detailed_file.exists():
+        df_detailed = pd.read_csv(detailed_file)
+        has_detailed = True
+    else:
+        has_detailed = False
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    fig.suptitle(f'{dataset_name}\nFairness Metrics Over Time (SOFA ≥ 10)', fontsize=14, fontweight='bold')
+    if summary_file.exists():
+        df_summary = pd.read_csv(summary_file)
 
-    group_colors = {'Gender': '#64b5cd', 'Race': '#dd8452', 'Age': '#55a868'}
+    # Create 3-panel figure: Gender, Race, Age
+    fig = plt.figure(figsize=(18, 12))
+    fig.suptitle(f'{dataset_name}\nFairness Metrics by Subgroup (SOFA ≥ 10)', fontsize=14, fontweight='bold')
 
-    # Panel A: Demographic Parity Difference
-    ax1 = axes[0]
-    for group_type in df['group_type'].unique():
-        sub_df = df[df['group_type'] == group_type].sort_values('time_period')
-        color = group_colors.get(group_type, '#666666')
-        ax1.plot(range(len(sub_df)), sub_df['demographic_parity_diff'], 'o-',
-                label=group_type, color=color, linewidth=2, markersize=6)
+    # Define subgroup colors
+    gender_colors = {'Male': '#64b5cd', 'Female': '#dd8452'}
+    race_colors = {'White': '#4c72b0', 'Black': '#55a868', 'Hispanic': '#c44e52', 'Asian': '#8172b3', 'Other': '#999999'}
+    age_colors = {'18-44': '#4c72b0', '45-64': '#55a868', '65-79': '#c44e52', '80+': '#8172b3'}
 
-    ax1.axhline(y=0, color='red', linestyle='--', linewidth=1.5, label='Perfect Parity')
-    ax1.set_title('Panel A: Demographic Parity Difference', fontweight='bold')
-    ax1.set_xlabel('Time Period')
-    ax1.set_ylabel('Max Difference in Positive Prediction Rate')
-    ax1.legend(loc='best')
+    if has_detailed:
+        # Get unique time periods
+        periods = sorted(df_detailed['time_period'].unique())
+        n_periods = len(periods)
 
-    # Set x-tick labels
-    periods = sorted(df['time_period'].unique())
-    ax1.set_xticks(range(len(periods)))
-    short_labels = [p.split(' - ')[0] if ' - ' in str(p) else str(p)[:4] for p in periods]
-    ax1.set_xticklabels(short_labels, rotation=45, ha='right')
+        # Panel A: Gender (Male/Female) - Sensitivity over time
+        ax1 = fig.add_subplot(2, 3, 1)
+        gender_data = df_detailed[df_detailed['group_type'] == 'Gender']
+        for gender in ['Male', 'Female']:
+            sub_df = gender_data[gender_data['subgroup'] == gender].sort_values('time_period')
+            if len(sub_df) > 0:
+                color = gender_colors.get(gender, '#666666')
+                ax1.plot(range(len(sub_df)), sub_df['sensitivity'], 'o-',
+                        label=gender, color=color, linewidth=2, markersize=6)
+        ax1.set_title('A. Gender: Sensitivity (TPR)', fontweight='bold')
+        ax1.set_xlabel('Time Period')
+        ax1.set_ylabel('Sensitivity')
+        ax1.legend(title='Gender', loc='best')
+        ax1.set_xticks(range(n_periods))
+        short_labels = [p.split(' - ')[0] if ' - ' in str(p) else str(p)[:4] for p in periods]
+        ax1.set_xticklabels(short_labels, rotation=45, ha='right')
 
-    # Panel B: Equalized Odds Difference
-    ax2 = axes[1]
-    for group_type in df['group_type'].unique():
-        sub_df = df[df['group_type'] == group_type].sort_values('time_period')
-        color = group_colors.get(group_type, '#666666')
-        ax2.plot(range(len(sub_df)), sub_df['equalized_odds_diff'], 'o-',
-                label=group_type, color=color, linewidth=2, markersize=6)
+        # Panel B: Gender - Specificity over time
+        ax2 = fig.add_subplot(2, 3, 2)
+        for gender in ['Male', 'Female']:
+            sub_df = gender_data[gender_data['subgroup'] == gender].sort_values('time_period')
+            if len(sub_df) > 0:
+                color = gender_colors.get(gender, '#666666')
+                ax2.plot(range(len(sub_df)), sub_df['specificity'], 'o-',
+                        label=gender, color=color, linewidth=2, markersize=6)
+        ax2.set_title('B. Gender: Specificity (1-FPR)', fontweight='bold')
+        ax2.set_xlabel('Time Period')
+        ax2.set_ylabel('Specificity')
+        ax2.legend(title='Gender', loc='best')
+        ax2.set_xticks(range(n_periods))
+        ax2.set_xticklabels(short_labels, rotation=45, ha='right')
 
-    ax2.axhline(y=0, color='red', linestyle='--', linewidth=1.5, label='Perfect Odds')
-    ax2.set_title('Panel B: Equalized Odds Difference', fontweight='bold')
-    ax2.set_xlabel('Time Period')
-    ax2.set_ylabel('Avg(TPR diff + FPR diff)')
-    ax2.legend(loc='best')
+        # Panel C: Gender - Positive Rate over time
+        ax3 = fig.add_subplot(2, 3, 3)
+        for gender in ['Male', 'Female']:
+            sub_df = gender_data[gender_data['subgroup'] == gender].sort_values('time_period')
+            if len(sub_df) > 0:
+                color = gender_colors.get(gender, '#666666')
+                ax3.plot(range(len(sub_df)), sub_df['positive_rate'], 'o-',
+                        label=gender, color=color, linewidth=2, markersize=6)
+        ax3.set_title('C. Gender: Positive Prediction Rate', fontweight='bold')
+        ax3.set_xlabel('Time Period')
+        ax3.set_ylabel('Positive Rate')
+        ax3.legend(title='Gender', loc='best')
+        ax3.set_xticks(range(n_periods))
+        ax3.set_xticklabels(short_labels, rotation=45, ha='right')
 
-    ax2.set_xticks(range(len(periods)))
-    ax2.set_xticklabels(short_labels, rotation=45, ha='right')
+        # Panel D: Race - Sensitivity over time
+        ax4 = fig.add_subplot(2, 3, 4)
+        race_data = df_detailed[df_detailed['group_type'] == 'Race']
+        if len(race_data) > 0:
+            for race in ['White', 'Black', 'Hispanic', 'Asian']:
+                sub_df = race_data[race_data['subgroup'] == race].sort_values('time_period')
+                if len(sub_df) > 0:
+                    color = race_colors.get(race, '#666666')
+                    ax4.plot(range(len(sub_df)), sub_df['sensitivity'], 'o-',
+                            label=race, color=color, linewidth=2, markersize=6)
+            ax4.set_title('D. Race: Sensitivity (TPR)', fontweight='bold')
+            ax4.legend(title='Race', loc='best')
+        else:
+            ax4.text(0.5, 0.5, 'No race data available', ha='center', va='center', fontsize=11)
+            ax4.set_title('D. Race: Sensitivity', fontweight='bold')
+        ax4.set_xlabel('Time Period')
+        ax4.set_ylabel('Sensitivity')
+        ax4.set_xticks(range(n_periods))
+        ax4.set_xticklabels(short_labels, rotation=45, ha='right')
+
+        # Panel E: Age - Sensitivity over time
+        ax5 = fig.add_subplot(2, 3, 5)
+        age_data = df_detailed[df_detailed['group_type'] == 'Age']
+        if len(age_data) > 0:
+            for age in ['18-44', '45-64', '65-79', '80+']:
+                sub_df = age_data[age_data['subgroup'] == age].sort_values('time_period')
+                if len(sub_df) > 0:
+                    color = age_colors.get(age, '#666666')
+                    ax5.plot(range(len(sub_df)), sub_df['sensitivity'], 'o-',
+                            label=age, color=color, linewidth=2, markersize=6)
+            ax5.set_title('E. Age: Sensitivity (TPR)', fontweight='bold')
+            ax5.legend(title='Age', loc='best')
+        else:
+            ax5.text(0.5, 0.5, 'No age data available', ha='center', va='center', fontsize=11)
+            ax5.set_title('E. Age: Sensitivity', fontweight='bold')
+        ax5.set_xlabel('Time Period')
+        ax5.set_ylabel('Sensitivity')
+        ax5.set_xticks(range(n_periods))
+        ax5.set_xticklabels(short_labels, rotation=45, ha='right')
+
+        # Panel F: Age - Specificity over time
+        ax6 = fig.add_subplot(2, 3, 6)
+        if len(age_data) > 0:
+            for age in ['18-44', '45-64', '65-79', '80+']:
+                sub_df = age_data[age_data['subgroup'] == age].sort_values('time_period')
+                if len(sub_df) > 0:
+                    color = age_colors.get(age, '#666666')
+                    ax6.plot(range(len(sub_df)), sub_df['specificity'], 'o-',
+                            label=age, color=color, linewidth=2, markersize=6)
+            ax6.set_title('F. Age: Specificity (1-FPR)', fontweight='bold')
+            ax6.legend(title='Age', loc='best')
+        else:
+            ax6.text(0.5, 0.5, 'No age data available', ha='center', va='center', fontsize=11)
+            ax6.set_title('F. Age: Specificity', fontweight='bold')
+        ax6.set_xlabel('Time Period')
+        ax6.set_ylabel('Specificity')
+        ax6.set_xticks(range(n_periods))
+        ax6.set_xticklabels(short_labels, rotation=45, ha='right')
+
+    else:
+        # Fall back to summary metrics if detailed not available
+        group_colors = {'Gender': '#64b5cd', 'Race': '#dd8452', 'Age': '#55a868'}
+
+        ax1 = fig.add_subplot(1, 2, 1)
+        for group_type in df_summary['group_type'].unique():
+            sub_df = df_summary[df_summary['group_type'] == group_type].sort_values('time_period')
+            color = group_colors.get(group_type, '#666666')
+            ax1.plot(range(len(sub_df)), sub_df['demographic_parity_diff'], 'o-',
+                    label=group_type, color=color, linewidth=2, markersize=6)
+        ax1.axhline(y=0, color='red', linestyle='--', linewidth=1.5, label='Perfect Parity')
+        ax1.set_title('A. Demographic Parity Difference', fontweight='bold')
+        ax1.set_xlabel('Time Period')
+        ax1.set_ylabel('Max Difference in Positive Rate')
+        ax1.legend(loc='best')
+
+        ax2 = fig.add_subplot(1, 2, 2)
+        for group_type in df_summary['group_type'].unique():
+            sub_df = df_summary[df_summary['group_type'] == group_type].sort_values('time_period')
+            color = group_colors.get(group_type, '#666666')
+            ax2.plot(range(len(sub_df)), sub_df['equalized_odds_diff'], 'o-',
+                    label=group_type, color=color, linewidth=2, markersize=6)
+        ax2.axhline(y=0, color='red', linestyle='--', linewidth=1.5, label='Perfect Odds')
+        ax2.set_title('B. Equalized Odds Difference', fontweight='bold')
+        ax2.set_xlabel('Time Period')
+        ax2.set_ylabel('Avg(TPR diff + FPR diff)')
+        ax2.legend(loc='best')
 
     plt.tight_layout()
 
@@ -1687,6 +1805,9 @@ def create_va_can_style_drift_figure(dataset_key, dataset_name):
     df['f1'] = 2 * (df['tpr'] * df['ppv']) / (df['tpr'] + df['ppv'])
     df['f1'] = df['f1'].fillna(0)
 
+    # Compute Specificity (1 - FPR)
+    df['specificity'] = 1 - df['fpr']
+
     # Compute accuracy approximation: (TP + TN) / Total
     # Accuracy = TPR * prevalence + (1-FPR) * (1-prevalence)
     # Using mortality rate as prevalence
@@ -1697,14 +1818,14 @@ def create_va_can_style_drift_figure(dataset_key, dataset_name):
     fig.suptitle(f'{dataset_name}\nPerformance Drift at SOFA ≥ 10 Threshold (VA CAN Paper Format)',
                  fontsize=14, fontweight='bold')
 
-    # Define metrics and panel positions
+    # Define metrics and panel positions (using Sensitivity/Specificity labels)
     metrics = [
         ('accuracy', 'A  Accuracy', axes[0, 0]),
         ('f1', 'B  F1 Score', axes[0, 1]),
-        ('fpr', 'C  False Positive Rate', axes[0, 2]),
-        ('npv', 'D  Negative Predictive Value', axes[1, 0]),
+        ('tpr', 'C  Sensitivity (TPR)', axes[0, 2]),
+        ('specificity', 'D  Specificity (1-FPR)', axes[1, 0]),
         ('ppv', 'E  Positive Predictive Value', axes[1, 1]),
-        ('tpr', 'F  True Positive Rate', axes[1, 2])
+        ('npv', 'F  Negative Predictive Value', axes[1, 2])
     ]
 
     # Subgroups to analyze
