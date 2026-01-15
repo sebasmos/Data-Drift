@@ -3,6 +3,17 @@ Configuration file for drift analysis across multiple datasets.
 Edit this file to specify which dataset to analyze.
 """
 
+import os
+from pathlib import Path
+
+# ============================================================
+# BASE PATHS - Automatically detected based on script location
+# ============================================================
+_CONFIG_DIR = Path(__file__).parent  # code/
+_BASE_DIR = _CONFIG_DIR.parent        # Data-Drift/
+_DATA_DIR = _BASE_DIR / 'data'
+_OUTPUT_DIR = _BASE_DIR / 'output'
+
 # ============================================================
 # DATASET CONFIGURATIONS
 # ============================================================
@@ -10,11 +21,12 @@ Edit this file to specify which dataset to analyze.
 DATASETS = {
     'mimic': {
         'name': 'MIMIC (Mechanical Ventilation)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimic',
+        'data_path': str(_DATA_DIR / 'mimic_iv_lc'),
         'file': 'turning_interval_frequency.csv',
         'outcome_col': 'outcome',
         'outcome_positive': 'Deceased',  # Value indicating positive outcome (mortality)
         'score_col': 'sofa',  # Pre-computed SOFA score
+        'score_cols': ['sofa'],  # All available scores
         'year_col': 'admission_year',
         'year_bins': ['2008 - 2010', '2011 - 2013', '2014 - 2016', '2017 - 2019'],
         'demographic_cols': {
@@ -31,51 +43,14 @@ DATASETS = {
         'description': 'BWH ICU patients on mechanical ventilation (2008-2019)'
     },
 
-    'eicu_v1': {
-        'name': 'eICU v1 (Sepsis Cohort)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
-        'file': 'sepsis_adult_eicu_v1.csv',
-        'outcome_col': 'hospitaldischargestatus',  # Adjust based on actual column
-        'outcome_positive': 'Expired',  # Adjust based on actual value
-        'score_col': 'sofa',  # To be computed
-        'year_col': 'hospitaladmityear',  # Adjust based on actual column
-        'year_bins': None,  # Will be computed automatically
-        'demographic_cols': {
-            'race': 'ethnicity',
-            'gender': 'gender',
-            'age': 'age'
-        },
-        'clinical_cols': {},
-        'has_precomputed_sofa': False,  # Needs computation
-        'description': 'eICU sepsis cohort from multi-center database'
-    },
-
-    'eicu_v2': {
-        'name': 'eICU v2 (Sepsis Cohort)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\eicu',
-        'file': 'sepsis_adult_eicu_v2.csv',
-        'outcome_col': 'hospitaldischargestatus',
-        'outcome_positive': 'Expired',
-        'score_col': 'sofa',
-        'year_col': 'hospitaladmityear',
-        'year_bins': None,
-        'demographic_cols': {
-            'race': 'ethnicity',
-            'gender': 'gender',
-            'age': 'age'
-        },
-        'clinical_cols': {},
-        'has_precomputed_sofa': False,
-        'description': 'eICU sepsis cohort v2 from multi-center database'
-    },
-
     'mimic_mouthcare': {
         'name': 'MIMIC (Mouthcare Cohort)',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\mimic',
+        'data_path': str(_DATA_DIR / 'mimic_iv_lc'),
         'file': 'mouthcare_interval_frequency.csv',
         'outcome_col': 'outcome',
         'outcome_positive': 'Deceased',
         'score_col': 'sofa',
+        'score_cols': ['sofa'],
         'year_col': 'admission_year',
         'year_bins': ['2008 - 2010', '2011 - 2013', '2014 - 2016', '2017 - 2019'],
         'demographic_cols': {
@@ -92,58 +67,254 @@ DATASETS = {
         'description': 'BWH ICU patients with mouthcare data (2008-2019)'
     },
 
-    # Placeholder for future datasets
-    'chinese_icu': {
-        'name': 'Chinese ICU Dataset',
-        'data_path': None,  # To be specified
-        'file': None,
-        'outcome_col': None,
-        'outcome_positive': None,
-        'score_col': 'sofa',
-        'year_col': None,
-        'year_bins': None,
-        'demographic_cols': {},
-        'clinical_cols': {},
-        'has_precomputed_sofa': False,
-        'description': 'Chinese ICU dataset (pending - Ziyue)'
+    # ============================================================
+    # NEW SALZ DATASETS (ML-Scores Bias Study)
+    # ============================================================
+
+    'mimic_combined': {
+        'name': 'MIMIC Combined (2001-2022)',
+        'data_path': str(_DATA_DIR / 'mimic_combined'),
+        'file': 'mimic_combined_ml-scores_bias.csv',
+        'outcome_col': 'death_hosp',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All available scores
+        'year_col': 'anchor_year_group',
+        'year_bins': ['2001 - 2008', '2008 - 2010', '2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hospital_day',
+            'source': 'source'  # mimic-iii or mimic-iv
+        },
+        'has_precomputed_sofa': True,
+        'description': 'MIMIC-III + MIMIC-IV combined (2001-2022) - 21 years continuous drift analysis'
     },
 
-    'amsterdam_icu': {
-        'name': 'Amsterdam ICU Dataset',
-        'data_path': r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\data\amsterdam',
+    'mimiciii': {
+        'name': 'MIMIC-III (2001-2008)',
+        'data_path': str(_DATA_DIR / 'mimic_iii'),
+        'file': 'mimiciii_ml-scores_bias.csv',
+        'outcome_col': 'death_hosp',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All available scores including SOFA
+        'year_col': 'anchor_year_group',
+        'year_bins': None,  # Single period: 2001-2008
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hospital_day'
+        },
+        'has_precomputed_sofa': True,
+        'description': 'MIMIC-III ICU dataset (2001-2008) - single time bin'
+    },
+
+    'mimiciv': {
+        'name': 'MIMIC-IV (2008-2022)',
+        'data_path': str(_DATA_DIR / 'mimic_iv_x'),
+        'file': 'mimiciv_ml-scores_bias.csv',
+        'outcome_col': 'death_hosp',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All available scores including SOFA
+        'year_col': 'anchor_year_group',
+        'year_bins': ['2008 - 2010', '2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hospital_day'
+        },
+        'has_precomputed_sofa': True,
+        'description': 'MIMIC-IV ICU dataset (2008-2022) - 5 time bins'
+    },
+
+    'eicu_combined': {
+        'name': 'eICU Combined (2014-2021)',
+        'data_path': str(_DATA_DIR / 'eicu_combined'),
+        'file': 'eicu_combined_ml-scores_bias.csv',
+        'outcome_col': 'hosp_mort',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii', 'apachescore'],  # All scores including SOFA
+        'year_col': 'hospitaldischargeyear',
+        'year_bins': [2014, 2015, 2020, 2021],  # 4 year bins for temporal analysis
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hosp_day',
+            'region': 'region',
+            'source': 'source'  # eicu-old or eicu-new
+        },
+        'has_precomputed_sofa': True,
+        'description': 'eICU-old + eICU-new combined (2014-2021) - 7 years temporal drift analysis'
+    },
+
+    'eicu': {
+        'name': 'eICU (2014-2015)',
+        'data_path': str(_DATA_DIR / 'eicu'),
+        'file': 'eicu_ml-scores_bias.csv',
+        'outcome_col': 'hosp_mort',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii', 'apachescore'],  # All scores including SOFA
+        'year_col': 'hospitaldischargeyear',
+        'year_bins': None,  # Will use 2014, 2015
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hosp_day',
+            'region': 'region'
+        },
+        'has_precomputed_sofa': True,
+        'description': 'eICU Collaborative Research Database (2014-2015)'
+    },
+
+    'eicu_new': {
+        'name': 'eICU-New (2020-2021)',
+        'data_path': str(_DATA_DIR / 'eicu_new'),
+        'file': 'eicu_new_ml-scores_bias.csv',
+        'outcome_col': 'hosp_mort',
+        'outcome_positive': 1,
+        'score_col': 'oasis',  # Primary score
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii', 'apachescore'],  # All scores including SOFA
+        'year_col': 'hospitaldischargeyear',
+        'year_bins': None,  # Will use 2020, 2021
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hosp_day',
+            'region': 'region'
+        },
+        'has_precomputed_sofa': True,
+        'description': 'eICU dataset (2020-2021)'
+    },
+
+    'zhejiang': {
+        'name': 'Zhejiang ICU (2011-2022)',
+        'data_path': str(_DATA_DIR / 'zhejiang'),
+        'file': 'zhejiang_ml-scores_bias.csv',
+        'outcome_col': 'death_hosp',
+        'outcome_positive': 1,
+        'score_col': 'sofa',  # Has SOFA!
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All scores including SOFA
+        'year_col': 'anchor_year_group',
+        'year_bins': ['2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
+        'demographic_cols': {
+            'gender': 'gender',
+            'age': 'age'
+            # No race/ethnicity data
+        },
+        'clinical_cols': {
+            'los_icu': 'los_icu_day',
+            'los_hospital': 'los_hospital_day'
+        },
+        'has_precomputed_sofa': True,
+        'description': 'Zhejiang Provincial Hospital ICU (2011-2022, China)'
+    },
+
+    'saltz': {
+        'name': 'Saltz ICU (2013-2021)',
+        'data_path': str(_DATA_DIR / 'saltz'),
         'file': 'salz_ml-scores_bias.csv',
         'outcome_col': 'death_hosp',
-        'outcome_positive': 1,  # 1 = death, 0 = survived
-        'score_col': 'sofa',
+        'outcome_positive': 1,
+        'score_col': 'sofa',  # Has SOFA!
+        'score_cols': ['sofa', 'oasis', 'sapsii', 'apsiii'],  # All scores
         'year_col': 'anchor_year_group',
         'year_bins': None,  # Will use individual years (2013-2021)
         'demographic_cols': {
             'gender': 'gender',
             'age': 'age'
-            # Note: No race/ethnicity data in this dataset
+            # No race/ethnicity data
         },
         'clinical_cols': {
             'los_icu': 'los_icu_day',
             'los_hospital': 'los_hospital_day',
-            'sapsii': 'sapsii',
-            'apsiii': 'apsiii',
-            'oasis': 'oasis',
             'bmi': 'bmi'
         },
         'has_precomputed_sofa': True,
-        'description': 'Amsterdam UMC ICU dataset (2013-2021)'
+        'description': 'Saltz ICU dataset (2013-2021)'
+    },
+
+    # ============================================================
+    # LEGACY CONFIGS (kept for backwards compatibility)
+    # ============================================================
+
+    'eicu_v1': {
+        'name': 'eICU v1 (Sepsis Cohort - Legacy)',
+        'data_path': str(_DATA_DIR / 'eicu'),
+        'file': 'sepsis_adult_eicu_v1.csv',
+        'outcome_col': 'hospitaldischargestatus',
+        'outcome_positive': 'Expired',
+        'score_col': 'sofa',
+        'score_cols': ['sofa'],
+        'year_col': 'hospitaladmityear',
+        'year_bins': None,
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {},
+        'has_precomputed_sofa': False,
+        'description': 'eICU sepsis cohort v1 (legacy - needs SOFA computation)'
+    },
+
+    'eicu_v2': {
+        'name': 'eICU v2 (Sepsis Cohort - Legacy)',
+        'data_path': str(_DATA_DIR / 'eicu'),
+        'file': 'sepsis_adult_eicu_v2.csv',
+        'outcome_col': 'hospitaldischargestatus',
+        'outcome_positive': 'Expired',
+        'score_col': 'sofa',
+        'score_cols': ['sofa'],
+        'year_col': 'hospitaladmityear',
+        'year_bins': None,
+        'demographic_cols': {
+            'race': 'ethnicity',
+            'gender': 'gender',
+            'age': 'age'
+        },
+        'clinical_cols': {},
+        'has_precomputed_sofa': False,
+        'description': 'eICU sepsis cohort v2 (legacy - needs SOFA computation)'
     }
 }
 
 # ============================================================
 # ACTIVE DATASET - CHANGE THIS TO SWITCH DATASETS
 # ============================================================
-ACTIVE_DATASET = 'mimic_mouthcare'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'amsterdam_icu', etc.
+ACTIVE_DATASET = 'mimic_mouthcare'  # Options: 'mimic', 'eicu_v1', 'eicu_v2', 'mimic_mouthcare', 'saltz', etc.
 
 # ============================================================
 # OUTPUT CONFIGURATION
 # ============================================================
-OUTPUT_PATH = r'C:\Users\sebastian.cajasordon\Documents\Data-Drift\output'
+OUTPUT_PATH = str(_OUTPUT_DIR)
 
 # Create dataset-specific output subdirectories
 OUTPUT_SUBDIRS = True  # If True, creates output/mimic/, output/eicu_v1/, etc.

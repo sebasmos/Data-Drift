@@ -1,6 +1,6 @@
-# Amsterdam ICU Dataset - Analysis Results
+# Saltz ICU Dataset - Analysis Results
 
-**Dataset:** Amsterdam UMC ICU (2013-2021)
+**Dataset:** Saltz ICU (2013-2021)
 **Analysis Date:** 2025-12-14
 **Status:** ✅ Complete
 
@@ -8,7 +8,7 @@
 
 ## Quick Summary
 
-- **27,259 patients** from Amsterdam UMC ICU (2013-2021)
+- **27,259 patients** from Saltz ICU (2013-2021)
 - **7.9% mortality** (2,163 deaths)
 - **SOFA performance improving** over time (+0.034 AUC, +5%)
 - **Mortality decreased 38%** (11.7% → 7.2%)
@@ -91,26 +91,26 @@
 
 ### 5. Comparison with MIMIC
 
-| Feature | Amsterdam ICU | MIMIC (Mech. Vent.) |
+| Feature | Saltz ICU | MIMIC (Mech. Vent.) |
 |---------|---------------|---------------------|
 | **Trend** | ⬆️ **Improving** | ⬇️ **Declining** |
 | **Population** | General ICU | Ventilated only |
 | **Mortality** | 7.9% | 20-30% |
 | **Best Subgroup** | <50 years (+24%) | Varies |
 
-**Critical:** Amsterdam shows **opposite drift pattern** from MIMIC!
+**Critical:** Saltz shows **opposite drift pattern** from MIMIC!
 
 ---
 
 ## Generated Outputs
 
-**Location:** `output/amsterdam_icu/`
+**Location:** `output/saltz/`
 
 **Files:**
-1. `amsterdam_icu_drift_analysis.png` - Main visualization (4 panels)
-2. `amsterdam_icu_yearly_performance.csv` - Year-by-year metrics (9 rows)
-3. `amsterdam_icu_gender_performance.csv` - Gender stratification (18 rows)
-4. `amsterdam_icu_age_performance.csv` - Age stratification (36 rows)
+1. `saltz_drift_analysis.png` - Main visualization (4 panels)
+2. `saltz_yearly_performance.csv` - Year-by-year metrics (9 rows)
+3. `saltz_gender_performance.csv` - Gender stratification (18 rows)
+4. `saltz_age_performance.csv` - Age stratification (36 rows)
 
 ---
 
@@ -119,7 +119,7 @@
 ### 1. Configuration
 Dataset already configured in `code/config.py`:
 ```python
-ACTIVE_DATASET = 'amsterdam_icu'
+ACTIVE_DATASET = 'saltz'
 ```
 
 ### 2. Run Analysis
@@ -131,8 +131,8 @@ python mimic/02_drift_analysis.py  # Drift analysis + plots
 
 ### 3. View Results
 ```bash
-# Outputs in: output/amsterdam_icu/
-open output/amsterdam_icu/amsterdam_icu_drift_analysis.png
+# Outputs in: output/saltz/
+open output/saltz/saltz_drift_analysis.png
 ```
 
 ---
@@ -156,7 +156,7 @@ open output/amsterdam_icu/amsterdam_icu_drift_analysis.png
 
 ## Limitations
 
-1. **Single center** - Amsterdam UMC only, may not generalize
+1. **Single center** - Saltz only, may not generalize
 2. **No race/ethnicity data** - Cannot assess racial disparities
 3. **No care frequency data** - Cannot analyze nursing care patterns
 4. **Observational** - Cannot establish causation
@@ -181,8 +181,8 @@ open output/amsterdam_icu/amsterdam_icu_drift_analysis.png
 
 ### Configuration Entry
 ```python
-'amsterdam_icu': {
-    'data_path': r'...\Data-Drift\data\amsterdam',
+'saltz': {
+    'data_path': r'...\Data-Drift\data\saltz',
     'file': 'salz_ml-scores_bias.csv',
     'outcome_col': 'death_hosp',
     'outcome_positive': 1,
@@ -211,11 +211,11 @@ open output/amsterdam_icu/amsterdam_icu_drift_analysis.png
 ## Citation
 
 ```bibtex
-@dataset{amsterdam_icu_2025,
-  title={Amsterdam ICU Dataset Drift Analysis},
+@dataset{saltz_icu_2025,
+  title={Saltz ICU Dataset Drift Analysis},
   author={Cajas Ord{\'o}{\~n}ez, Sebasti{\'a}n and Team},
   year={2025},
-  note={Amsterdam UMC ICU patients 2013-2021, N=27,259}
+  note={Saltz ICU patients 2013-2021, N=27,259}
 }
 ```
 
@@ -224,7 +224,7 @@ open output/amsterdam_icu/amsterdam_icu_drift_analysis.png
 ## Contact
 
 - **Project:** Data-Drift
-- **Configuration:** `code/config.py` (amsterdam_icu entry)
+- **Configuration:** `code/config.py` (saltz entry)
 - **Scripts:** `code/mimic/` (dataset-agnostic)
 - **Main README:** [../../README.md](../../README.md)
 
