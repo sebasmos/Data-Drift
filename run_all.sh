@@ -21,7 +21,7 @@
 #   --bootstrap 1000 : 1000 iterations (~2-4 hr) - for production/publication
 #
 # Requirements:
-#   - Python 3.9+
+#   - Python 3.10+
 #   - uv package manager (install with: pip install uv)
 #
 # Outputs:
@@ -30,7 +30,7 @@
 #   - output/volatility_indicators.csv       (fluctuation/volatility metrics)
 #   - output/regional_breakdown.csv          (eICU regional analysis)
 #   - output/care_demographics_correlation.csv (care quartile vs demographics)
-#   - figures/fig1-7*.png                    (visualizations)
+#   - figures/fig1-6*.png                    (main figures, 6 total per X2)
 #   - output/review_response.pdf             (reviewer response document)
 #
 # Author: Data Drift Analysis Project
@@ -176,7 +176,7 @@ if [ "$RUN_SETUP" = true ]; then
     elif command_exists python; then
         PYTHON_CMD="python"
     else
-        echo -e "${RED}ERROR: Python not found. Please install Python 3.9+${NC}"
+        echo -e "${RED}ERROR: Python not found. Please install Python 3.10+${NC}"
         exit 1
     fi
 
@@ -322,7 +322,7 @@ echo ""
 
 if [ -d "figures" ]; then
     echo "  Figures (figures/):"
-    for f in figures/fig*.png; do
+    for f in figures/fig*.png figures/fig*.svg; do
         [ -f "$f" ] && echo "    - $(basename $f)"
     done
 fi
@@ -338,7 +338,7 @@ echo "  - Drift Deltas:       output/all_datasets_drift_deltas.csv"
 echo "  - Volatility:         output/volatility_indicators.csv"
 echo "  - Regional Breakdown: output/regional_breakdown.csv"
 echo "  - Care Demographics:  output/care_demographics_correlation.csv"
-echo "  - Key Figure:         figures/fig7_money_figure.png"
+echo "  - Main Figures:       figures/fig2_gender_race.png, fig3_age_race.png, fig4_gender_age_race.png, fig5_mouthcare.png, fig6_mechvent.png"
 echo "  - Review Response:    output/review_response.pdf"
 echo ""
 echo "To regenerate specific outputs:"

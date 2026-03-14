@@ -111,98 +111,46 @@ Results are saved to `volatility_indicators.csv`.
 
 ## Figure Organization
 
-Each dataset is analyzed and presented independently. Main figures use Xiaoli's recommended bar chart format: grouped bars with 95% CI error bars, "All" population as red line overlay, intersectional groupings only.
+Six main figures per Xiaoli's recommendation (X2). Framing follows Leo's directive: uniform recalibration is unsafe (L1). Cross-group intersectional comparisons only in main figures (X4); single-subgroup analyses in supplementary (X6).
 
-### Main Figures
+### Main Figures (6)
 
-#### Figure 1: Gender-Race SOFA Performance
+| # | File | Content |
+|---|------|---------|
+| 1 | `fig1_study_flow.svg` | Study flow diagram and cohort characteristics |
+| 2 | `fig2_gender_race.png` | Gender-Race SOFA: per-dataset bar charts with 95% CI |
+| 3 | `fig3_age_race.png` | Age-Race SOFA: per-dataset bar charts with 95% CI |
+| 4 | `fig4_gender_age_race.png` | Gender-Age-Race SOFA: 3-way intersectional (MIMIC + eICU) |
+| 5 | `fig5_mouthcare.png` | Nursing care phenotype: mouthcare drift (MIMIC only) |
+| 6 | `fig6_mechvent.png` | Nursing care phenotype: mechanical ventilation drift (MIMIC only) |
 
-Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz, (D) Zhejiang. Groups: Male-Black, Male-White, Female-Black, Female-White (where race data available; gender-only for Saltz/Zhejiang).
+#### Figure 1 — Study Flow
 
-![Figure 1 — Gender-Race SOFA Performance](figures/fig_xiaoli_1_gender_race.png)
+![Figure 1 — Study Flow](figures/fig1_study_flow.svg)
 
-#### Figure 2: Age-Race SOFA Performance
+#### Figure 2 — Gender-Race SOFA Performance
 
-Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz, (D) Zhejiang. Groups: Adult-Black, Adult-White, Old-Black, Old-White, Very-old-Black, Very-old-White (age-only for Saltz/Zhejiang).
+![Figure 2 — Gender-Race SOFA](figures/fig2_gender_race.png)
 
-![Figure 2 — Age-Race SOFA Performance](figures/fig_xiaoli_2_age_race.png)
+#### Figure 3 — Age-Race SOFA Performance
 
-#### Figure 3: Gender-Age-Race SOFA Performance
+![Figure 3 — Age-Race SOFA](figures/fig3_age_race.png)
 
-Panels: (A) MIMIC-IV, (B) eICU. Three-way intersectional groups (Male-Adult-Black, Female-Old-White, etc.). Only datasets with race data.
+#### Figure 4 — Gender-Age-Race SOFA Performance
 
-![Figure 3 — Gender-Age-Race SOFA Performance](figures/fig_xiaoli_3_gender_age_race.png)
+![Figure 4 — Gender-Age-Race SOFA](figures/fig4_gender_age_race.png)
 
-### Supplementary: Per-Dataset Detailed Analysis
+#### Figure 5 — Nursing Care: Mouthcare (MIMIC only)
 
-<details>
-<summary>Click to expand per-dataset figures</summary>
+![Figure 5 — Mouthcare](figures/fig5_mouthcare.png)
 
-#### Per-Dataset Intersectional Analysis
+#### Figure 6 — Nursing Care: Mechanical Ventilation (MIMIC only)
 
-![MIMIC — Per Dataset](figures/supplementary/figS_per_dataset_mimic_combined.png)
-![eICU — Per Dataset](figures/supplementary/figS_per_dataset_eicu_combined.png)
-![Saltz — Per Dataset](figures/supplementary/figS_per_dataset_saltz.png)
-![Zhejiang — Per Dataset](figures/supplementary/figS_per_dataset_zhejiang.png)
+![Figure 6 — Mechanical Ventilation](figures/fig6_mechvent.png)
 
-#### Per-Dataset Calibration, Fairness, VA CAN Drift
+### Supplementary Figures
 
-![MIMIC Calibration](figures/supplementary/figS_mimic_combined_calibration.png)
-![MIMIC Fairness](figures/supplementary/figS_mimic_combined_fairness.png)
-![MIMIC VA CAN](figures/supplementary/figS_mimic_combined_va_can_drift.png)
-![eICU Calibration](figures/supplementary/figS_eicu_combined_calibration.png)
-![eICU Fairness](figures/supplementary/figS_eicu_combined_fairness.png)
-![eICU VA CAN](figures/supplementary/figS_eicu_combined_va_can_drift.png)
-![Saltz Calibration](figures/supplementary/figS_saltz_calibration.png)
-![Saltz Fairness](figures/supplementary/figS_saltz_fairness.png)
-![Saltz VA CAN](figures/supplementary/figS_saltz_va_can_drift.png)
-![Zhejiang Calibration](figures/supplementary/figS_zhejiang_calibration.png)
-![Zhejiang Fairness](figures/supplementary/figS_zhejiang_fairness.png)
-![Zhejiang VA CAN](figures/supplementary/figS_zhejiang_va_can_drift.png)
-
-</details>
-
-### Supplementary: Care Phenotypes (MIMIC only)
-
-<details>
-<summary>Click to expand</summary>
-
-![Mouthcare](figures/supplementary/figS1_mimic_mouthcare.png)
-![Mechanical Ventilation](figures/supplementary/figS2_mimic_mechvent.png)
-
-#### Care Phenotype Demographics (L6)
-
-![Mouthcare — Demographics Heatmap](figures/supplementary/mouthcare_care_demographics_heatmap.png)
-![Mouthcare — Care Phenotype x Demographics](figures/supplementary/mouthcare_care_phenotype_demographics.png)
-![Mechanical Ventilation — Demographics Heatmap](figures/supplementary/mechvent_care_demographics_heatmap.png)
-![Mechanical Ventilation — Care Phenotype x Demographics](figures/supplementary/mechvent_care_phenotype_demographics.png)
-
-</details>
-
-### Supplementary: Single-Subgroup Analyses (per dataset)
-
-<details>
-<summary>Click to expand</summary>
-
-#### MIMIC
-![MIMIC — Age](figures/supplementary/figS_age_mimic_combined.png)
-![MIMIC — Gender](figures/supplementary/figS_gender_mimic_combined.png)
-![MIMIC — Race](figures/supplementary/figS_race_mimic_combined.png)
-
-#### eICU
-![eICU — Age](figures/supplementary/figS_age_eicu_combined.png)
-![eICU — Gender](figures/supplementary/figS_gender_eicu_combined.png)
-![eICU — Race](figures/supplementary/figS_race_eicu_combined.png)
-
-#### Saltz
-![Saltz — Age](figures/supplementary/figS_age_saltz.png)
-![Saltz — Gender](figures/supplementary/figS_gender_saltz.png)
-
-#### Zhejiang
-![Zhejiang — Age](figures/supplementary/figS_age_zhejiang.png)
-![Zhejiang — Gender](figures/supplementary/figS_gender_zhejiang.png)
-
-</details>
+Generated by `generate_all_figures.py` into `figures/supplementary/`. Include per-dataset intersectional analyses, single-subgroup panels (age-only, gender-only, race-only), calibration drift, fairness metrics, VA-CAN drift, care phenotype demographic cross-tabulations, and volatility heatmaps.
 
 ---
 
