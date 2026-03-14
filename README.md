@@ -156,24 +156,6 @@ Each dataset is analyzed and presented independently — no cross-dataset figure
 <details>
 <summary>Click to expand supplementary figures</summary>
 
-#### Single-Subgroup Analyses (per dataset)
-
-![Age Comparison](figures/supplementary/figS4_age_comparison.png)
-![Gender Comparison](figures/supplementary/figS7_gender_comparison.png)
-![Race Comparison](figures/supplementary/figS5_race_comparison.png)
-
-#### Statistical Results
-
-![Significance Forest Plot](figures/supplementary/figS6_significance_forest_plot.png)
-![Between-Group Comparison](figures/supplementary/figS12_between_group_comparison.png)
-![Drift Delta Summary](figures/supplementary/figS8_drift_delta_summary.png)
-
-#### Detailed Analyses
-
-![Score Comparison by Age](figures/supplementary/figS10_score_comparison_by_age.png)
-![Temporal Trajectory](figures/supplementary/figS11_temporal_trajectory.png)
-![Comprehensive Heatmap](figures/supplementary/figS9_comprehensive_heatmap.png)
-
 #### Care Phenotypes (MIMIC only)
 
 ![Mouthcare](figures/supplementary/figS1_mimic_mouthcare.png)
