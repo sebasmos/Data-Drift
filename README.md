@@ -104,20 +104,34 @@ Results are saved to `volatility_indicators.csv`.
 
 ## Figure Organization
 
-Each dataset is analyzed and presented independently — no cross-dataset figures that mix populations with different available demographics.
+Each dataset is analyzed and presented independently. Main figures use Xiaoli's recommended bar chart format: grouped bars with 95% CI error bars, "All" population as red line overlay, intersectional groupings only.
 
-### Main Figures (per dataset)
+### Main Figures
 
-| Figure | Content |
-|--------|---------|
-| **1** | Study flow diagram and cohort characteristics |
-| **2** | MIMIC Combined: subgroup drift, intersectional, calibration, fairness |
-| **3** | eICU Combined: subgroup drift, intersectional, calibration, fairness |
-| **4** | Saltz (Europe): subgroup drift, calibration, fairness |
-| **5** | Zhejiang (Asia): subgroup drift, calibration, fairness |
-| **6** | Care phenotypes with demographic cross-tabulation (MIMIC only) |
+#### Figure 1: Gender-Race SOFA Performance
 
-### MIMIC Combined (2001--2022)
+Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz, (D) Zhejiang. Groups: Male-Black, Male-White, Female-Black, Female-White (where race data available; gender-only for Saltz/Zhejiang).
+
+![Figure 1 — Gender-Race SOFA Performance](figures/fig_xiaoli_1_gender_race.png)
+
+#### Figure 2: Age-Race SOFA Performance
+
+Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz, (D) Zhejiang. Groups: Adult-Black, Adult-White, Old-Black, Old-White, Very-old-Black, Very-old-White (age-only for Saltz/Zhejiang).
+
+![Figure 2 — Age-Race SOFA Performance](figures/fig_xiaoli_2_age_race.png)
+
+#### Figure 3: Gender-Age-Race SOFA Performance
+
+Panels: (A) MIMIC-IV, (B) eICU. Three-way intersectional groups (Male-Adult-Black, Female-Old-White, etc.). Only datasets with race data.
+
+![Figure 3 — Gender-Age-Race SOFA Performance](figures/fig_xiaoli_3_gender_age_race.png)
+
+### Supplementary: Per-Dataset Detailed Analysis
+
+<details>
+<summary>Click to expand per-dataset figures</summary>
+
+#### MIMIC Combined (2001--2022)
 
 ![MIMIC Combined — Subgroup Drift](figures/fig1_mimic_combined.png)
 ![MIMIC Combined — Intersectional](figures/fig1b_mimic_combined_intersectional.png)
@@ -125,7 +139,7 @@ Each dataset is analyzed and presented independently — no cross-dataset figure
 ![MIMIC Fairness](figures/fig8_mimic_combined_fairness.png)
 ![MIMIC VA CAN Drift](figures/fig6b_mimic_combined_va_can_drift.png)
 
-### eICU Combined (2014--2021)
+#### eICU Combined (2014--2021)
 
 ![eICU Combined — Subgroup Drift](figures/fig2_eicu_combined.png)
 ![eICU Combined — Intersectional](figures/fig2b_eicu_combined_intersectional.png)
@@ -133,23 +147,24 @@ Each dataset is analyzed and presented independently — no cross-dataset figure
 ![eICU Fairness](figures/fig8_eicu_combined_fairness.png)
 ![eICU VA CAN Drift](figures/fig6b_eicu_combined_va_can_drift.png)
 
-### Saltz ICU (2013--2021, Europe)
+#### Saltz ICU (2013--2021, Europe)
 
 ![Saltz — Subgroup Drift](figures/fig3_saltz.png)
 ![Saltz — Intersectional](figures/fig3b_saltz_intersectional.png)
-![Saltz Calibration](figures/fig7_saltz_calibration.png)
-![Saltz Fairness](figures/fig8_saltz_fairness.png)
 ![Saltz VA CAN Drift](figures/fig6b_saltz_va_can_drift.png)
 
-### Zhejiang ICU (2011--2022, China)
+#### Zhejiang ICU (2011--2022, China)
 
 ![Zhejiang — Subgroup Drift](figures/fig4_zhejiang.png)
 ![Zhejiang — Intersectional](figures/fig4b_zhejiang_intersectional.png)
-![Zhejiang Calibration](figures/fig7_zhejiang_calibration.png)
-![Zhejiang Fairness](figures/fig8_zhejiang_fairness.png)
 ![Zhejiang VA CAN Drift](figures/fig6b_zhejiang_va_can_drift.png)
 
-### Care Phenotypes (MIMIC only)
+</details>
+
+### Supplementary: Care Phenotypes (MIMIC only)
+
+<details>
+<summary>Click to expand</summary>
 
 ![Mouthcare](figures/supplementary/figS1_mimic_mouthcare.png)
 ![Mechanical Ventilation](figures/supplementary/figS2_mimic_mechvent.png)
@@ -157,9 +172,11 @@ Each dataset is analyzed and presented independently — no cross-dataset figure
 #### Care Phenotype Demographics (L6)
 
 ![Mouthcare — Demographics Heatmap](figures/supplementary/mouthcare_care_demographics_heatmap.png)
-![Mouthcare — Care Phenotype × Demographics](figures/supplementary/mouthcare_care_phenotype_demographics.png)
+![Mouthcare — Care Phenotype x Demographics](figures/supplementary/mouthcare_care_phenotype_demographics.png)
 ![Mechanical Ventilation — Demographics Heatmap](figures/supplementary/mechvent_care_demographics_heatmap.png)
-![Mechanical Ventilation — Care Phenotype × Demographics](figures/supplementary/mechvent_care_phenotype_demographics.png)
+![Mechanical Ventilation — Care Phenotype x Demographics](figures/supplementary/mechvent_care_phenotype_demographics.png)
+
+</details>
 
 ### Supplementary: Single-Subgroup Analyses (per dataset)
 

@@ -2957,6 +2957,527 @@ def create_xiaoli_3panel_summary(results, deltas):
     return output_path
 
 
+# =====================================================================
+# XIAOLI DESIGN — Grouped bar charts with 95% CI error bars
+# =====================================================================
+
+# Color scheme per Xiaoli's design (Blue, Red, Orange, Green, Purple)
+_XIAOLI_COLORS = ['#4472C4', '#C00000', '#ED7D31', '#70AD47', '#7030A0',
+                  '#FFC000', '#5B9BD5', '#A5A5A5']
+
+# Age bin -> Xiaoli label mapping
+_AGE_LABEL_MAP = {
+    '18-44': 'Adult',
+    '45-64': 'Adult',
+    '65-79': 'Old',
+    '80+': 'Very-old',
+}
+
+# SOFA score key (primary) — data uses 'sofa_t2' as the default SOFA threshold
+_SOFA_SCORE_KEY = 'sofa_t2'
+
+# Dataset-specific time period configs for the Xiaoli figures
+_XIAOLI_DATASETS = {
+    'mimiciv': {
+        'label': 'MIMIC-IV',
+        'source_dataset': 'mimic_combined',
+        'time_periods': ['2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
+        'time_labels': ['2011-2013', '2014-2016', '2017-2019', '2020-2022'],
+        'show_gap': False,
+        'has_race': True,
+    },
+    'eicu_combined': {
+        'label': 'eICU',
+        'source_dataset': 'eicu_combined',
+        'time_periods': [2014, 2015, 2020, 2021],
+        'time_labels': ['2014', '2015', '2020', '2021'],
+        'show_gap': True,
+        'has_race': True,
+    },
+    'saltz': {
+        'label': 'Saltz',
+        'source_dataset': 'saltz',
+        'time_periods': None,  # use all available
+        'time_labels': None,
+        'show_gap': False,
+        'has_race': False,
+    },
+    'zhejiang': {
+        'label': 'Zhejiang',
+        'source_dataset': 'zhejiang',
+        'time_periods': ['2011 - 2013', '2014 - 2016', '2017 - 2019', '2020 - 2022'],
+        'time_labels': ['2011-2013', '2014-2016', '2017-2019', '2020-2022'],
+        'show_gap': False,
+        'has_race': False,
+    },
+}
+
+
+def _load_dataset_sofa(dataset_key):
+    """Load drift_results.csv for *dataset_key* and filter to SOFA score."""
+    cfg = _XIAOLI_DATASETS[dataset_key]
+    src = cfg['source_dataset']
+    path = OUTPUT_DIR / src / 'drift_results.csv'
+    if not path.exists():
+        return None
+    df = pd.read_csv(path)
+    df = df[df['score'] == _SOFA_SCORE_KEY].copy()
+    # Filter to desired time periods
+    if cfg['time_periods'] is not None:
+        df = df[df['time_period'].isin(cfg['time_periods'])].copy()
+    return df
+
+
+def _extract_group_data(df, subgroup_name, time_periods):
+    """Return (auc, ci_lower, ci_upper) arrays aligned to *time_periods* for a subgroup."""
+    aucs, ci_lo, ci_hi = [], [], []
+    for tp in time_periods:
+        row = df[df['time_period'] == tp]
+        if len(row) > 0:
+            r = row.iloc[0]
+            aucs.append(r['auc'])
+            ci_lo.append(r.get('auc_ci_lower', np.nan))
+            ci_hi.append(r.get('auc_ci_upper', np.nan))
+        else:
+            aucs.append(np.nan)
+            ci_lo.append(np.nan)
+            ci_hi.append(np.nan)
+    return np.array(aucs), np.array(ci_lo), np.array(ci_hi)
+
+
+def create_xiaoli_bar_chart(ax, dataset_df, groups, group_labels, time_periods,
+                            time_labels, title, show_gap=False, colors=None):
+    """Draw a grouped bar chart with 95 % CI whiskers and an 'All' red line overlay.
+
+    Parameters
+    ----------
+    ax : matplotlib Axes
+    dataset_df : DataFrame  – drift_results rows for one dataset / score
+    groups : list[str]      – subgroup values in the data (e.g. 'Male_Black')
+    group_labels : list[str] – display names (e.g. 'Male-Black')
+    time_periods : list      – ordered time-period values in the data
+    time_labels : list[str]  – display labels for x-axis
+    title : str
+    show_gap : bool          – if True, draw ">>" between 2nd and 3rd period (eICU)
+    colors : list | None     – bar colours per group; defaults to _XIAOLI_COLORS
+    """
+    if colors is None:
+        colors = _XIAOLI_COLORS
+
+    n_groups = len(groups)
+    n_periods = len(time_periods)
+    bar_width = 0.8 / max(n_groups, 1)
+
+    # x positions for the centres of each time-period cluster
+    x_base = np.arange(n_periods, dtype=float)
+    if show_gap and n_periods >= 4:
+        # Insert visual gap between 2nd and 3rd period
+        x_base = np.array([0.0, 1.0, 3.0, 4.0][:n_periods])
+
+    for i, (grp, glabel) in enumerate(zip(groups, group_labels)):
+        grp_df = dataset_df[(dataset_df['subgroup'] == grp)]
+        auc, ci_lo, ci_hi = _extract_group_data(grp_df, grp, time_periods)
+        yerr_lo = np.nan_to_num(auc - ci_lo, nan=0)
+        yerr_hi = np.nan_to_num(ci_hi - auc, nan=0)
+        yerr_lo = np.clip(yerr_lo, 0, None)
+        yerr_hi = np.clip(yerr_hi, 0, None)
+        yerr = np.array([yerr_lo, yerr_hi])
+
+        offset = (i - n_groups / 2 + 0.5) * bar_width
+        x_pos = x_base + offset
+        color = colors[i % len(colors)]
+
+        ax.bar(x_pos, auc, width=bar_width * 0.9, color=color, label=glabel,
+               edgecolor='white', linewidth=0.5, zorder=2)
+        # Error bars (95% CI whiskers)
+        ax.errorbar(x_pos, auc, yerr=yerr, fmt='none', ecolor='black',
+                     capsize=2, capthick=0.8, elinewidth=0.8, zorder=3)
+
+    # Overlay "All" as red line with circle markers
+    all_df = dataset_df[(dataset_df['subgroup_type'] == 'Overall') &
+                        (dataset_df['subgroup'] == 'All')]
+    auc_all, ci_lo_all, ci_hi_all = _extract_group_data(all_df, 'All', time_periods)
+    ax.plot(x_base, auc_all, 'o-', color='#C00000', markersize=7, linewidth=2,
+            label='All', zorder=5)
+    # CI band for All
+    valid = ~np.isnan(auc_all)
+    if valid.any():
+        ax.fill_between(x_base[valid], ci_lo_all[valid], ci_hi_all[valid],
+                         color='#C00000', alpha=0.10, zorder=4)
+
+    # Gap annotation
+    if show_gap and n_periods >= 4:
+        mid_x = (x_base[1] + x_base[2]) / 2
+        y_mid = ax.get_ylim()[0] + 0.5 * (ax.get_ylim()[1] - ax.get_ylim()[0])
+        ax.annotate('>>', xy=(mid_x, y_mid), fontsize=14, fontweight='bold',
+                    ha='center', va='center', color='grey')
+
+    # Formatting
+    ax.set_xticks(x_base)
+    ax.set_xticklabels(time_labels, fontsize=9)
+    ax.set_ylabel('AUROC (95% CI)', fontsize=10)
+    ax.set_title(title, fontsize=11, fontweight='bold')
+    ax.legend(fontsize=7, loc='lower left', framealpha=0.9, ncol=min(n_groups + 1, 3))
+    ax.set_ylim(0.50, 0.95)
+    ax.grid(axis='y', alpha=0.3)
+
+
+# ---------- helper: map raw subgroup to Xiaoli's naming -------------------
+
+def _map_gender_race_subgroups(df, has_race=True):
+    """From intersectional subgroups like '18-44_Male_Black', extract unique
+    gender-race combos and return (groups_raw, group_labels, filtered_df).
+    Gender-Race means we aggregate across age bins.
+    """
+    inter = df[df['subgroup_type'] == 'Intersectional'].copy()
+    if inter.empty:
+        return [], [], inter
+
+    parts = inter['subgroup'].str.split('_', expand=True)
+    if has_race and parts.shape[1] >= 3:
+        inter = inter.copy()
+        inter['_age'] = parts[0]
+        inter['_gender'] = parts[1]
+        inter['_race'] = parts[2]
+        # Desired groups for Figure 1
+        target_combos = [
+            ('Male', 'Black'), ('Male', 'White'), ('Male', 'Hispanic'),
+            ('Female', 'Black'), ('Female', 'White'),
+        ]
+        # For each target combo, we aggregate across age bins by averaging AUC
+        # per time period
+        rows = []
+        for gender, race in target_combos:
+            sub = inter[(inter['_gender'] == gender) & (inter['_race'] == race)]
+            if sub.empty:
+                continue
+            agg = sub.groupby('time_period').agg(
+                auc=('auc', 'mean'),
+                auc_ci_lower=('auc_ci_lower', 'mean'),
+                auc_ci_upper=('auc_ci_upper', 'mean'),
+                n=('n', 'sum'),
+            ).reset_index()
+            agg['subgroup'] = f'{gender}_{race}'
+            agg['subgroup_type'] = 'GenderRace'
+            rows.append(agg)
+        if not rows:
+            return [], [], pd.DataFrame()
+        agg_df = pd.concat(rows, ignore_index=True)
+        groups_raw = [f'{g}_{r}' for g, r in target_combos if f'{g}_{r}' in agg_df['subgroup'].unique()]
+        group_labels = [g.replace('_', '-') for g in groups_raw]
+        return groups_raw, group_labels, agg_df
+    elif not has_race and parts.shape[1] >= 2:
+        # Gender only (no race)
+        inter['_age'] = parts[0]
+        inter['_gender'] = parts[1]
+        target = ['Male', 'Female']
+        rows = []
+        for gender in target:
+            sub = inter[inter['_gender'] == gender]
+            if sub.empty:
+                continue
+            agg = sub.groupby('time_period').agg(
+                auc=('auc', 'mean'),
+                auc_ci_lower=('auc_ci_lower', 'mean'),
+                auc_ci_upper=('auc_ci_upper', 'mean'),
+                n=('n', 'sum'),
+            ).reset_index()
+            agg['subgroup'] = gender
+            agg['subgroup_type'] = 'GenderRace'
+            rows.append(agg)
+        if not rows:
+            return [], [], pd.DataFrame()
+        agg_df = pd.concat(rows, ignore_index=True)
+        groups_raw = [g for g in target if g in agg_df['subgroup'].unique()]
+        group_labels = groups_raw[:]
+        return groups_raw, group_labels, agg_df
+    return [], [], pd.DataFrame()
+
+
+def _map_age_race_subgroups(df, has_race=True):
+    """Extract age-race combos mapped to Xiaoli labels (Adult, Old, Very-old)."""
+    if has_race:
+        inter = df[df['subgroup_type'] == 'Intersectional'].copy()
+        if inter.empty:
+            return [], [], inter
+        parts = inter['subgroup'].str.split('_', expand=True)
+        if parts.shape[1] < 3:
+            return [], [], pd.DataFrame()
+        inter['_age'] = parts[0]
+        inter['_gender'] = parts[1]
+        inter['_race'] = parts[2]
+        # Map age bins to Xiaoli labels and aggregate across gender
+        inter['_age_label'] = inter['_age'].map(_AGE_LABEL_MAP)
+        target_combos = [
+            ('Adult', 'Black'), ('Adult', 'White'),
+            ('Old', 'Black'), ('Old', 'White'),
+            ('Very-old', 'Black'), ('Very-old', 'White'),
+        ]
+        rows = []
+        for age_label, race in target_combos:
+            sub = inter[(inter['_age_label'] == age_label) & (inter['_race'] == race)]
+            if sub.empty:
+                continue
+            agg = sub.groupby('time_period').agg(
+                auc=('auc', 'mean'),
+                auc_ci_lower=('auc_ci_lower', 'mean'),
+                auc_ci_upper=('auc_ci_upper', 'mean'),
+                n=('n', 'sum'),
+            ).reset_index()
+            agg['subgroup'] = f'{age_label}_{race}'
+            agg['subgroup_type'] = 'AgeRace'
+            rows.append(agg)
+        if not rows:
+            return [], [], pd.DataFrame()
+        agg_df = pd.concat(rows, ignore_index=True)
+        groups_raw = [f'{a}_{r}' for a, r in target_combos if f'{a}_{r}' in agg_df['subgroup'].unique()]
+        group_labels = [g.replace('_', '-') for g in groups_raw]
+        return groups_raw, group_labels, agg_df
+    else:
+        # No race — use Age subgroups directly mapped to Xiaoli labels
+        age_df = df[df['subgroup_type'] == 'Age'].copy()
+        if age_df.empty:
+            return [], [], age_df
+        age_df['_age_label'] = age_df['subgroup'].map(_AGE_LABEL_MAP)
+        target = ['Adult', 'Old', 'Very-old']
+        rows = []
+        for age_label in target:
+            sub = age_df[age_df['_age_label'] == age_label]
+            if sub.empty:
+                continue
+            agg = sub.groupby('time_period').agg(
+                auc=('auc', 'mean'),
+                auc_ci_lower=('auc_ci_lower', 'mean'),
+                auc_ci_upper=('auc_ci_upper', 'mean'),
+                n=('n', 'sum'),
+            ).reset_index()
+            agg['subgroup'] = age_label
+            agg['subgroup_type'] = 'AgeRace'
+            rows.append(agg)
+        if not rows:
+            return [], [], pd.DataFrame()
+        agg_df = pd.concat(rows, ignore_index=True)
+        groups_raw = [a for a in target if a in agg_df['subgroup'].unique()]
+        group_labels = groups_raw[:]
+        return groups_raw, group_labels, agg_df
+
+
+def _map_gender_age_race_subgroups(df, has_race=True):
+    """Extract gender-age-race combos for Figure 3."""
+    inter = df[df['subgroup_type'] == 'Intersectional'].copy()
+    if inter.empty:
+        return [], [], inter
+    parts = inter['subgroup'].str.split('_', expand=True)
+    if has_race and parts.shape[1] >= 3:
+        inter['_age'] = parts[0]
+        inter['_gender'] = parts[1]
+        inter['_race'] = parts[2]
+        inter['_age_label'] = inter['_age'].map(_AGE_LABEL_MAP)
+        target_combos = [
+            ('Male', 'Adult', 'Black'), ('Male', 'Adult', 'White'),
+            ('Female', 'Adult', 'Black'), ('Female', 'Adult', 'White'),
+            ('Male', 'Old', 'Black'), ('Male', 'Old', 'White'),
+            ('Female', 'Old', 'Black'), ('Female', 'Old', 'White'),
+        ]
+        rows = []
+        for gender, age_label, race in target_combos:
+            sub = inter[(inter['_gender'] == gender) &
+                        (inter['_age_label'] == age_label) &
+                        (inter['_race'] == race)]
+            if sub.empty:
+                continue
+            agg = sub.groupby('time_period').agg(
+                auc=('auc', 'mean'),
+                auc_ci_lower=('auc_ci_lower', 'mean'),
+                auc_ci_upper=('auc_ci_upper', 'mean'),
+                n=('n', 'sum'),
+            ).reset_index()
+            agg['subgroup'] = f'{gender}_{age_label}_{race}'
+            agg['subgroup_type'] = 'GenderAgeRace'
+            rows.append(agg)
+        if not rows:
+            return [], [], pd.DataFrame()
+        agg_df = pd.concat(rows, ignore_index=True)
+        groups_raw = [f'{g}_{a}_{r}' for g, a, r in target_combos
+                      if f'{g}_{a}_{r}' in agg_df['subgroup'].unique()]
+        group_labels = [g.replace('_', '-') for g in groups_raw]
+        return groups_raw, group_labels, agg_df
+    return [], [], pd.DataFrame()
+
+
+def _get_time_info(dataset_key, dataset_df):
+    """Return (time_periods, time_labels) for a dataset, resolved from config or data."""
+    cfg = _XIAOLI_DATASETS[dataset_key]
+    if cfg['time_periods'] is not None:
+        tp = cfg['time_periods']
+    else:
+        tp = sorted(dataset_df['time_period'].unique(), key=lambda x: str(x))
+    if cfg['time_labels'] is not None:
+        tl = cfg['time_labels']
+    else:
+        tl = [str(t) for t in tp]
+    return tp, tl
+
+
+# ---------- Figure 1: Gender-Race SOFA Performance -----------------------
+
+def create_fig1_gender_race(results=None):
+    """Figure (Xiaoli 1): Gender-Race SOFA performance — grouped bar charts.
+
+    Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz*, (D) Zhejiang*
+    *Saltz/Zhejiang have no race data — show Male vs Female only.
+    """
+    # Datasets that can show gender-race or gender-only
+    panel_keys = ['mimiciv', 'eicu_combined', 'saltz', 'zhejiang']
+    panel_data = []
+
+    for dk in panel_keys:
+        ddf = _load_dataset_sofa(dk)
+        if ddf is None or ddf.empty:
+            continue
+        cfg = _XIAOLI_DATASETS[dk]
+        groups_raw, group_labels, agg_df = _map_gender_race_subgroups(ddf, has_race=cfg['has_race'])
+        if not groups_raw:
+            continue
+        tp, tl = _get_time_info(dk, ddf)
+        # Merge aggregated group rows with overall rows for the All line
+        overall_rows = ddf[ddf['subgroup_type'] == 'Overall'].copy()
+        combined = pd.concat([agg_df, overall_rows], ignore_index=True)
+        panel_data.append({
+            'key': dk, 'label': cfg['label'], 'df': combined,
+            'groups': groups_raw, 'glabels': group_labels,
+            'tp': tp, 'tl': tl, 'gap': cfg['show_gap'],
+        })
+
+    if not panel_data:
+        print("  Skipped fig_xiaoli_1: no data available")
+        return
+
+    n_panels = len(panel_data)
+    fig, axes = plt.subplots(n_panels, 1, figsize=(10, 4.5 * n_panels), squeeze=False)
+
+    for idx, pd_info in enumerate(panel_data):
+        panel_letter = chr(ord('A') + idx)
+        ax = axes[idx, 0]
+        create_xiaoli_bar_chart(
+            ax, pd_info['df'], pd_info['groups'], pd_info['glabels'],
+            pd_info['tp'], pd_info['tl'],
+            title=f'({panel_letter}) {pd_info["label"]}',
+            show_gap=pd_info['gap'],
+        )
+
+    fig.suptitle('Gender-Race SOFA Performance Over Time', fontsize=14, fontweight='bold', y=1.01)
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'fig_xiaoli_1_gender_race.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("Saved: fig_xiaoli_1_gender_race.png")
+
+
+# ---------- Figure 2: Age-Race SOFA Performance ---------------------------
+
+def create_fig2_age_race(results=None):
+    """Figure (Xiaoli 2): Age-Race SOFA performance — grouped bar charts.
+
+    Panels: (A) MIMIC-IV, (B) eICU, (C) Saltz, (D) Zhejiang
+    For datasets without race: show Adult, Old, Very-old only.
+    """
+    panel_keys = ['mimiciv', 'eicu_combined', 'saltz', 'zhejiang']
+    panel_data = []
+
+    for dk in panel_keys:
+        ddf = _load_dataset_sofa(dk)
+        if ddf is None or ddf.empty:
+            continue
+        cfg = _XIAOLI_DATASETS[dk]
+        groups_raw, group_labels, agg_df = _map_age_race_subgroups(ddf, has_race=cfg['has_race'])
+        if not groups_raw:
+            continue
+        tp, tl = _get_time_info(dk, ddf)
+        overall_rows = ddf[ddf['subgroup_type'] == 'Overall'].copy()
+        combined = pd.concat([agg_df, overall_rows], ignore_index=True)
+        panel_data.append({
+            'key': dk, 'label': cfg['label'], 'df': combined,
+            'groups': groups_raw, 'glabels': group_labels,
+            'tp': tp, 'tl': tl, 'gap': cfg['show_gap'],
+        })
+
+    if not panel_data:
+        print("  Skipped fig_xiaoli_2: no data available")
+        return
+
+    n_panels = len(panel_data)
+    fig, axes = plt.subplots(n_panels, 1, figsize=(10, 4.5 * n_panels), squeeze=False)
+
+    for idx, pd_info in enumerate(panel_data):
+        panel_letter = chr(ord('A') + idx)
+        ax = axes[idx, 0]
+        create_xiaoli_bar_chart(
+            ax, pd_info['df'], pd_info['groups'], pd_info['glabels'],
+            pd_info['tp'], pd_info['tl'],
+            title=f'({panel_letter}) {pd_info["label"]}',
+            show_gap=pd_info['gap'],
+        )
+
+    fig.suptitle('Age-Race SOFA Performance Over Time', fontsize=14, fontweight='bold', y=1.01)
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'fig_xiaoli_2_age_race.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("Saved: fig_xiaoli_2_age_race.png")
+
+
+# ---------- Figure 3: Gender-Age-Race SOFA Performance --------------------
+
+def create_fig3_gender_age_race(results=None):
+    """Figure (Xiaoli 3): Gender-Age-Race SOFA performance — grouped bar charts.
+
+    Only for datasets with race data: (A) MIMIC-IV, (B) eICU
+    """
+    panel_keys = ['mimiciv', 'eicu_combined']
+    panel_data = []
+
+    for dk in panel_keys:
+        ddf = _load_dataset_sofa(dk)
+        if ddf is None or ddf.empty:
+            continue
+        cfg = _XIAOLI_DATASETS[dk]
+        if not cfg['has_race']:
+            continue
+        groups_raw, group_labels, agg_df = _map_gender_age_race_subgroups(ddf, has_race=True)
+        if not groups_raw:
+            continue
+        tp, tl = _get_time_info(dk, ddf)
+        overall_rows = ddf[ddf['subgroup_type'] == 'Overall'].copy()
+        combined = pd.concat([agg_df, overall_rows], ignore_index=True)
+        panel_data.append({
+            'key': dk, 'label': cfg['label'], 'df': combined,
+            'groups': groups_raw, 'glabels': group_labels,
+            'tp': tp, 'tl': tl, 'gap': cfg['show_gap'],
+        })
+
+    if not panel_data:
+        print("  Skipped fig_xiaoli_3: no data available")
+        return
+
+    n_panels = len(panel_data)
+    fig, axes = plt.subplots(n_panels, 1, figsize=(12, 5.0 * n_panels), squeeze=False)
+
+    for idx, pd_info in enumerate(panel_data):
+        panel_letter = chr(ord('A') + idx)
+        ax = axes[idx, 0]
+        create_xiaoli_bar_chart(
+            ax, pd_info['df'], pd_info['groups'], pd_info['glabels'],
+            pd_info['tp'], pd_info['tl'],
+            title=f'({panel_letter}) {pd_info["label"]}',
+            show_gap=pd_info['gap'],
+        )
+
+    fig.suptitle('Gender-Age-Race SOFA Performance Over Time', fontsize=14, fontweight='bold', y=1.01)
+    plt.tight_layout()
+    fig.savefig(FIGURES_DIR / 'fig_xiaoli_3_gender_age_race.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("Saved: fig_xiaoli_3_gender_age_race.png")
+
+
 def main():
     """Generate all figures from per-dataset results.
 
@@ -3049,6 +3570,22 @@ def main():
     # The combined 3-panel figure mixed datasets with incomplete data (e.g.,
     # Saltz and Zhejiang have no race data), producing misleading fairness
     # heatmaps.  Per-dataset calibration/fairness figures above are sufficient.
+
+    # ============================================================
+    # XIAOLI DESIGN FIGURES: Grouped bar charts (Design_plot.pptx)
+    # ============================================================
+    print("\n" + "-" * 50)
+    print("XIAOLI DESIGN FIGURES: Grouped bar charts with 95% CI")
+    print("-" * 50)
+
+    print("Generating fig_xiaoli_1 (Gender-Race SOFA)...")
+    create_fig1_gender_race(results)
+
+    print("Generating fig_xiaoli_2 (Age-Race SOFA)...")
+    create_fig2_age_race(results)
+
+    print("Generating fig_xiaoli_3 (Gender-Age-Race SOFA)...")
+    create_fig3_gender_age_race(results)
 
     # ============================================================
     # SUPPLEMENTARY FIGURES: Cross-dataset comparisons (legacy S3-S12)
