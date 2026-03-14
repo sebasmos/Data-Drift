@@ -15,12 +15,13 @@
 4. [Statistical Methods](#statistical-methods)
 5. [SOFA Threshold Sensitivity](#sofa-threshold-sensitivity)
 6. [The MIMIC vs eICU Divergence](#the-mimic-vs-eicu-divergence)
-7. [Volatility Indicators](#volatility-indicators)
-8. [Figure Organization](#figure-organization)
-9. [Output Files](#output-files)
-10. [Reproducibility](#reproducibility)
-11. [Requirements](#requirements)
-12. [Citation](#citation)
+7. [Care Quartiles and Demographic Composition](#care-quartiles-and-demographic-composition)
+8. [Volatility Indicators](#volatility-indicators)
+9. [Figure Organization](#figure-organization)
+10. [Output Files](#output-files)
+11. [Reproducibility](#reproducibility)
+12. [Requirements](#requirements)
+13. [Citation](#citation)
 
 ---
 
@@ -87,6 +88,12 @@ Multiple SOFA binarization thresholds (2, 6, 8, 10) are tested to confirm that d
 MIMIC Black patients improve over time while eICU Black patients degrade. This is not contradictory -- it is the core evidence that uniform recalibration is dangerous. MIMIC represents a single academic center (Beth Israel Deaconess, Boston) where institutional quality improvement may lift all subgroups. eICU aggregates hundreds of hospitals across the US with vastly different practice patterns, resources, and patient populations.
 
 The eICU regional breakdown (Midwest, Northeast, South, West) and teaching-status stratification (teaching vs non-teaching) test whether this degradation is concentrated in specific regions or hospital types, or reflects a systemic pattern. If a hospital in the South shows different Black patient drift than one in the Northeast, a uniform national recalibration is doubly unsafe. Results are saved per-dataset to `regional_breakdown.csv`.
+
+---
+
+## Care Quartiles and Demographic Composition
+
+Are care intensity differences an independent source of drift, or a proxy for demographic disparities? The care-demographics correlation analysis cross-tabulates care frequency quartiles with age, gender, race, and their intersections. Chi-squared tests and Cramer's V quantify the strength of association. If care quartile strongly correlates with race, then care-mediated drift is not independent of demographic drift -- they are measuring the same disparity through different lenses. Results are saved to `care_demographics_correlation.csv` (MIMIC only, where care data is available).
 
 ---
 
