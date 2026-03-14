@@ -77,7 +77,7 @@ Data-Drift/
 │   ├── supplementary_analysis.py # Care phenotype analysis
 │   ├── config.py                 # Dataset configurations
 │   ├── create_report.py          # Word report generation
-│   └── tests/                    # Statistical method validation (19 tests)
+│   └── tests/                    # Statistical method validation
 ├── data/                         # Dataset CSVs (see data/README.md)
 ├── figures/                      # Generated figures
 │   └── supplementary/            # Supplementary figures
@@ -87,7 +87,11 @@ Data-Drift/
 │       ├── drift_deltas.csv               # Trend test results (FDR-corrected)
 │       ├── between_group_comparisons.csv  # Between-group drift tests
 │       ├── summary_by_score.csv           # Overall summary
-│       └── subgroup_drift.csv             # Subgroup-level results
+│       ├── subgroup_drift.csv             # Subgroup-level results
+│       ├── volatility_indicators.csv      # CV, max drawdown, trend reversal count
+│       ├── care_demographics_correlation.csv  # Care quartile × demographic cross-tabs
+│       ├── regional_breakdown.csv         # eICU regional/teaching-status results
+│       └── drift_deltas_sofa{T}.csv       # Per-threshold drift results (T=2,6,8,10)
 ├── run_all.sh                    # Reproducibility script
 └── requirements.txt
 ```
@@ -115,8 +119,28 @@ Data-Drift/
 | **Page's L trend test** | Monotonic AUC trends across all ordered time periods | Two-sided test on bootstrap replicates (`scipy.stats.page_trend_test`) |
 | **Between-group comparison** | Test whether drift differs between subgroups | Mann-Whitney U on bootstrap delta distributions (`scipy.stats.mannwhitneyu`) |
 | **FDR correction** | Control false discovery rate | Benjamini-Hochberg (`scipy.stats.false_discovery_control`), p < 0.05 |
+| **Pooled FDR** | Correct across all scores simultaneously | BH applied once over all per-score p-values (more conservative than per-score FDR) |
+| **Bootstrap independence** | Avoid inflating significance | First half of replicates used for trend tests, second half for between-group comparisons |
+| **Clinical significance** | Filter noise from meaningful drift | Minimum clinically significant delta threshold of 0.05 AUROC; `clinically_significant` requires both statistical significance AND delta > threshold |
 
 Page's trend test uses data from **all intermediate time periods** (not just first vs. last), detecting consistent trends that endpoint comparisons miss. Between-group tests answer whether one group's drift is significantly different from another's.
+
+#### SOFA Threshold Sensitivity
+
+Multiple SOFA thresholds are tested (2, 6, 8, 10) to evaluate robustness of classification metrics and fairness findings. Use the `--sofa-thresholds` CLI flag to specify thresholds (e.g., `--sofa-thresholds 2,6,8,10`). Per-threshold drift results are saved separately in `output/{dataset}/`.
+
+#### eICU Regional Analysis
+
+eICU data supports regional breakdown by hospital region (Midwest, Northeast, South, West) and teaching status (teaching vs. non-teaching). Regional results are saved to `regional_breakdown.csv`.
+
+#### Volatility Indicators
+
+Drift trajectories are characterized by volatility metrics beyond simple first-to-last deltas:
+- **Coefficient of variation (CV):** Normalized spread of AUC across periods
+- **Max drawdown:** Largest peak-to-trough AUC decline
+- **Trend reversal count:** Number of direction changes in the AUC trajectory
+
+Results are saved to `volatility_indicators.csv`.
 
 ### Results
 
@@ -190,52 +214,21 @@ Formal tests of whether one group's drift is significantly different from anothe
 
 #### Main Figures (Paper)
 
-**Figure 1: MIMIC Combined (US, 2001-2022)**
+6 main figures organized as follows:
 
-![MIMIC Combined](figures/fig1_mimic_combined.png)
-*4-panel: Age, Gender, Race drift + intersectional AUC trends (21 years, 6 periods)*
+**Figure 1: Study Flow + Cohort Description**
+Study design, inclusion criteria, and cohort characteristics across all 4 datasets.
 
-![MIMIC Intersectional](figures/fig1b_mimic_combined_intersectional.png)
-*Intersectional drift (Age × Gender × Race)*
+**Figures 2-3: Cross-Dataset SOFA and Fairness**
+SOFA drift trajectories and fairness metric comparisons across datasets, with intersectional breakdowns.
 
-**Figure 2: eICU Combined (US, 2014-2021)**
+**Figures 4-5: Nursing Care Phenotypes**
+Care intensity patterns (mouthcare and mechanical ventilation turning frequency) as proxies for unmeasured intersectional factors, with demographic cross-tabulation by care quartile.
 
-![eICU Combined](figures/fig2_eicu_combined.png)
-*4-panel: Age, Gender, Race drift + intersectional AUC trends (7 years, 4 periods)*
+**Figure 6: Summary**
+Multi-panel summary: age group divergence, race disparities, comprehensive heatmap.
 
-![eICU Intersectional](figures/fig2b_eicu_combined_intersectional.png)
-*Intersectional drift — young minority males show severe degradation during COVID era*
-
-**Figure 3: Saltz (Netherlands, 2013-2021)**
-
-![Saltz](figures/fig3_saltz.png)
-*4-panel: European dataset, no race data (9 years, 9 periods)*
-
-![Saltz Intersectional](figures/fig3b_saltz_intersectional.png)
-*Intersectional drift (Age × Gender)*
-
-**Figure 4: Zhejiang (China, 2011-2022)**
-
-![Zhejiang](figures/fig4_zhejiang.png)
-*4-panel: Asian dataset, no race data (11 years, 4 periods)*
-
-![Zhejiang Intersectional](figures/fig4b_zhejiang_intersectional.png)
-*Intersectional drift (Age × Gender)*
-
-**Figure 5: Summary (Money Figure)**
-
-![Summary Figure](figures/fig5_money_figure.png)
-*Multi-panel summary: age group divergence, race disparities, comprehensive heatmap*
-
-**Figure 6: Between-Group Drift Comparison**
-
-![Between-Group Comparison](figures/supplementary/figS12_between_group_comparison.png)
-*Forest plot of between-group drift differences (SOFA, Mann-Whitney U, FDR-corrected)*
-
-**Figure 7: Significance Forest Plot**
-
-![Significance Forest Plot](figures/supplementary/figS6_significance_forest_plot.png)
-*Statistically significant drift findings ranked by effect size with 95% CIs*
+Per-dataset single-subgroup analyses (Age, Gender, Race individually) and per-dataset classification/calibration/fairness panels are in **supplementary figures**.
 
 #### Supplementary Figures
 
@@ -313,7 +306,7 @@ Code and figures will be integrated into this repository once complete.
 
 ## Part 3: Care Phenotypes
 
-Care phenotypes use **nursing care intensity patterns** as a proxy for unmeasured intersectional factors (socioeconomic status, insurance, language barriers). This captures how the healthcare system *perceives* a patient — beyond traditional demographic labels. See [Care Phenotypes Documentation](docs/care_phenotypes.md).
+Care phenotypes use **nursing care intensity patterns** as a proxy for unmeasured intersectional factors (socioeconomic status, insurance, language barriers). This captures how the healthcare system *perceives* a patient — beyond traditional demographic labels. Demographic cross-tabulation with care quartiles reveals which patient groups receive systematically different care intensities (saved to `care_demographics_correlation.csv`). See [Care Phenotypes Documentation](docs/care_phenotypes.md).
 
 **MIMIC-IV Subsets:**
 
