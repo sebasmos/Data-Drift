@@ -131,33 +131,27 @@ Panels: (A) MIMIC-IV, (B) eICU. Three-way intersectional groups (Male-Adult-Blac
 <details>
 <summary>Click to expand per-dataset figures</summary>
 
-#### MIMIC Combined (2001--2022)
+#### Per-Dataset Intersectional Analysis
 
-![MIMIC Combined — Subgroup Drift](figures/fig1_mimic_combined.png)
-![MIMIC Combined — Intersectional](figures/fig1b_mimic_combined_intersectional.png)
-![MIMIC Calibration](figures/fig7_mimic_combined_calibration.png)
-![MIMIC Fairness](figures/fig8_mimic_combined_fairness.png)
-![MIMIC VA CAN Drift](figures/fig6b_mimic_combined_va_can_drift.png)
+![MIMIC — Per Dataset](figures/supplementary/figS_per_dataset_mimic_combined.png)
+![eICU — Per Dataset](figures/supplementary/figS_per_dataset_eicu_combined.png)
+![Saltz — Per Dataset](figures/supplementary/figS_per_dataset_saltz.png)
+![Zhejiang — Per Dataset](figures/supplementary/figS_per_dataset_zhejiang.png)
 
-#### eICU Combined (2014--2021)
+#### Per-Dataset Calibration, Fairness, VA CAN Drift
 
-![eICU Combined — Subgroup Drift](figures/fig2_eicu_combined.png)
-![eICU Combined — Intersectional](figures/fig2b_eicu_combined_intersectional.png)
-![eICU Calibration](figures/fig7_eicu_combined_calibration.png)
-![eICU Fairness](figures/fig8_eicu_combined_fairness.png)
-![eICU VA CAN Drift](figures/fig6b_eicu_combined_va_can_drift.png)
-
-#### Saltz ICU (2013--2021, Europe)
-
-![Saltz — Subgroup Drift](figures/fig3_saltz.png)
-![Saltz — Intersectional](figures/fig3b_saltz_intersectional.png)
-![Saltz VA CAN Drift](figures/fig6b_saltz_va_can_drift.png)
-
-#### Zhejiang ICU (2011--2022, China)
-
-![Zhejiang — Subgroup Drift](figures/fig4_zhejiang.png)
-![Zhejiang — Intersectional](figures/fig4b_zhejiang_intersectional.png)
-![Zhejiang VA CAN Drift](figures/fig6b_zhejiang_va_can_drift.png)
+![MIMIC Calibration](figures/supplementary/figS_mimic_combined_calibration.png)
+![MIMIC Fairness](figures/supplementary/figS_mimic_combined_fairness.png)
+![MIMIC VA CAN](figures/supplementary/figS_mimic_combined_va_can_drift.png)
+![eICU Calibration](figures/supplementary/figS_eicu_combined_calibration.png)
+![eICU Fairness](figures/supplementary/figS_eicu_combined_fairness.png)
+![eICU VA CAN](figures/supplementary/figS_eicu_combined_va_can_drift.png)
+![Saltz Calibration](figures/supplementary/figS_saltz_calibration.png)
+![Saltz Fairness](figures/supplementary/figS_saltz_fairness.png)
+![Saltz VA CAN](figures/supplementary/figS_saltz_va_can_drift.png)
+![Zhejiang Calibration](figures/supplementary/figS_zhejiang_calibration.png)
+![Zhejiang Fairness](figures/supplementary/figS_zhejiang_fairness.png)
+![Zhejiang VA CAN](figures/supplementary/figS_zhejiang_va_can_drift.png)
 
 </details>
 

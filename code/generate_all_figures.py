@@ -3501,34 +3501,14 @@ def main():
         return
 
     # ============================================================
-    # MAIN FIGURES (6 total, X2)
+    # MAIN FIGURES: Xiaoli bar chart design + study flow
     # ============================================================
     print("\n" + "-" * 50)
-    print("MAIN FIGURES (1-6)")
+    print("MAIN FIGURES")
     print("-" * 50)
 
-    # Fig 1: Study flow placeholder
+    # Study flow placeholder
     fig1_study_flow()
-
-    # Fig 2: SOFA cross-dataset, cross-group
-    print("\nGenerating fig2 (SOFA cross-dataset)...")
-    fig2_cross_dataset_sofa(results, deltas)
-
-    # Fig 3: Fairness + forest plot (X5)
-    print("Generating fig3 (fairness + forest plot)...")
-    fig3_cross_dataset_fairness(results, deltas)
-
-    # Fig 4: Nursing - mouthcare
-    print("Generating fig4 (nursing mouthcare)...")
-    fig4_nursing_mouthcare()
-
-    # Fig 5: Nursing - mechanical ventilation
-    print("Generating fig5 (nursing mechvent)...")
-    fig5_nursing_mechvent()
-
-    # Fig 6: Summary / money figure
-    print("Generating fig6 (summary)...")
-    fig6_summary(results, deltas)
 
     # ============================================================
     # SUPPLEMENTARY: single-subgroup per-dataset (X4/X6)
@@ -3566,16 +3546,11 @@ def main():
         create_fairness_figure(dataset_key, dataset_name)
         create_va_can_style_drift_figure(dataset_key, dataset_name)
 
-    # NOTE: create_xiaoli_3panel_summary REMOVED (Issue 2 / Xiaoli feedback).
-    # The combined 3-panel figure mixed datasets with incomplete data (e.g.,
-    # Saltz and Zhejiang have no race data), producing misleading fairness
-    # heatmaps.  Per-dataset calibration/fairness figures above are sufficient.
-
     # ============================================================
     # XIAOLI DESIGN FIGURES: Grouped bar charts (Design_plot.pptx)
     # ============================================================
     print("\n" + "-" * 50)
-    print("XIAOLI DESIGN FIGURES: Grouped bar charts with 95% CI")
+    print("MAIN FIGURES: Xiaoli bar charts with 95% CI")
     print("-" * 50)
 
     print("Generating fig_xiaoli_1 (Gender-Race SOFA)...")
@@ -3586,24 +3561,6 @@ def main():
 
     print("Generating fig_xiaoli_3 (Gender-Age-Race SOFA)...")
     create_fig3_gender_age_race(results)
-
-    # ============================================================
-    # SUPPLEMENTARY FIGURES: Cross-dataset comparisons (legacy S3-S12)
-    # ============================================================
-    print("\n" + "-" * 50)
-    print("SUPPLEMENTARY FIGURES: Cross-Dataset Comparisons (S3-S12)")
-    print("-" * 50)
-
-    figS3_overall_drift_by_dataset(results, deltas)
-    figS4_age_stratified_comparison(results, deltas)
-    figS5_race_comparison(results, deltas)
-    figS6_significance_forest_plot(deltas)
-    figS7_gender_comparison(results, deltas)
-    figS8_drift_delta_summary(deltas)
-    figS9_comprehensive_heatmap(deltas)
-    figS10_score_comparison_by_age(deltas)
-    figS11_temporal_trajectory(results)
-    figS12_between_group_forest_plot()
 
     # Create summary tables
     print("\nGenerating summary tables...")
