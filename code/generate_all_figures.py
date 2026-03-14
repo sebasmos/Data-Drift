@@ -4,31 +4,38 @@ Subgroup-Specific Drift Analysis Figures
 Generates publication-quality visualizations showing NON-UNIFORM model drift
 across different patient subgroups.
 
-Restructured (X2/X4/X5/X6/X8/X14):
-- Main figures limited to 6 (X2), focused on CROSS-GROUP / intersectional views (X4/X6)
-- Single-subgroup panels (age-only, gender-only, race-only) moved to supplementary
+Restructured (X2/X4/X5/X6/X8/X14 + Xiaoli feedback):
+- EXACTLY 6 main figures (X2): cross-group / intersectional views only (X4/X6)
+- Single-subgroup panels (age-only, gender-only, race-only) in supplementary only
 - Forest plot of between-group comparisons promoted into main fig3 (X5)
+- Per-dataset figures (old fig1-4) moved to supplementary
+- Dataset-specific calibration, fairness, VA CAN figures moved to supplementary
+- Combined 3-panel summary (fig9) REMOVED from main — datasets with missing
+  race data (Saltz, Zhejiang) produced misleading fairness panels
 - Subgroups below min_sample_size excluded; sample-size annotations added (X8)
 - Colorblind-friendly palette for publication (X8)
 - Volatility heatmap from volatility_indicators.csv (X14)
 
-Main Figures (6 total, X2):
-  fig1_study_flow.png        - Placeholder for manually-created study flow diagram
-  fig2_cross_dataset_sofa.png - SOFA drift across all datasets, cross-group view
-  fig3_cross_dataset_fairness.png - Fairness/bias metrics + simplified forest plot (X5)
-  fig4_nursing_mouthcare.png - Mouthcare care phenotype analysis
-  fig5_nursing_mechvent.png  - Mechanical ventilation care phenotype analysis
-  fig6_summary.png           - Summary / money figure
+Main Figures (exactly 6, X2):
+  fig1_study_flow.png              - Placeholder for manually-created study flow diagram
+  fig2_cross_dataset_sofa.png      - SOFA drift across all datasets, cross-group view
+  fig3_cross_dataset_fairness.png  - Fairness/bias metrics + forest plot (X5)
+  fig4_nursing_mouthcare.png       - Mouthcare care phenotype analysis
+  fig5_nursing_mechvent.png        - Mechanical ventilation care phenotype analysis
+  fig6_summary.png                 - Summary / money figure
 
 Supplementary Figures (figures/supplementary/):
-  figS_age_{dataset}.png     - Age-only panels (previously main Panel A)
-  figS_gender_{dataset}.png  - Gender-only panels (previously main Panel B)
-  figS_race_{dataset}.png    - Race-only panels (previously main Panel C)
-  figS_per_dataset_{dataset}.png - Full per-dataset intersectional analysis
+  figS_age_{dataset}.png           - Age-only panels (X4/X6)
+  figS_gender_{dataset}.png        - Gender-only panels (X4/X6)
+  figS_race_{dataset}.png          - Race-only panels (X4/X6)
+  figS_per_dataset_{dataset}.png   - Full per-dataset intersectional analysis
+  figS_{dataset}_calibration.png   - Per-dataset calibration metrics
+  figS_{dataset}_fairness.png      - Per-dataset fairness metrics
+  figS_{dataset}_va_can_drift.png  - Per-dataset VA CAN-style classification drift
   figS1: MIMIC mouthcare cohort (care phenotypes)
   figS2: MIMIC mechanical ventilation cohort (care phenotypes)
-  figS3-S12: Cross-dataset comparisons (unchanged)
-  figS_volatility.png        - Volatility / fluctuation heatmap (X14)
+  figS3-S12: Cross-dataset comparisons
+  figS_volatility.png              - Volatility / fluctuation heatmap (X14)
 """
 
 import sys
@@ -1867,7 +1874,7 @@ def fig5_money_figure(results, deltas):
     plt.suptitle('Multi-Dataset Analysis of ICU Score Drift by Subgroup', fontsize=14, y=0.98)
     fig.savefig(SUPPLEMENTARY_FIGURES_DIR / 'figS_legacy_money_figure.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print("Saved: fig5_money_figure.png")
+    print("Saved: supplementary/figS_legacy_money_figure.png")
 
 
 def figS6_significance_forest_plot(deltas):
